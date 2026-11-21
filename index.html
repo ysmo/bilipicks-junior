@@ -237,7 +237,7 @@ kbd{font:inherit;font-weight:700;font-size:12.5px;padding:1px 7px;border-radius:
 .feed::-webkit-scrollbar{display:none}
 .slide{height:100%;scroll-snap-align:start;scroll-snap-stop:always;display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:24px;padding:6px 24px 20px;max-width:1280px;margin:0 auto;align-items:start}
 .player{position:relative;aspect-ratio:16/9;width:min(100%,calc((100dvh - var(--top-h) - 78px) * 16 / 9));justify-self:center;border-radius:18px;overflow:hidden;background:#0b1018;box-shadow:var(--shadow)}
-.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.player iframe,.player video{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
 .poster{position:absolute;inset:0;width:100%;height:100%;display:block}
 .poster img{opacity:.92}
 .poster .playdot{width:76px;height:76px;font-size:28px;transition:scale .15s ease}
@@ -367,7 +367,7 @@ body.tv .tv-bar{position:fixed;left:0;right:0;bottom:0;height:60px;z-index:61;di
   .hero-cover,.thumb,.mini{height:0;padding-top:56.25%}
   .player{width:100%;height:0;padding-top:56.25%}
   body.tv .slide.active .player{height:calc(100vh - 60px);padding-top:0}
-  .hero-cover img,.thumb img,.poster img,.mini img,.player iframe,.poster,.sheet,.sheet-bg,body.tv .watch{top:0;right:0;bottom:0;left:0}
+  .hero-cover img,.thumb img,.poster img,.mini img,.player iframe,.player video,.poster,.sheet,.sheet-bg,body.tv .watch{top:0;right:0;bottom:0;left:0}
   .ring::before{top:4px;right:4px;bottom:4px;left:4px}
   .hero h1{font-size:26px}
   .page h1{font-size:32px}
@@ -437,6 +437,45 @@ body.tv-cast .cast-hint{
   color:#c5d0e0;font-size:12.5px;font-weight:600;line-height:1.45;white-space:normal;
 }
 body.tv-cast .toast{bottom:calc(var(--cast-bar, 96px) + 12px)}
+
+/* 只有检测到同源 /proxy/（html.lan）才用这套。公开页面的投屏布局保持上面的 body.tv-cast。 */
+html.lan body.tv-cast .slide,
+html.lan body.tv .slide.active{transform:none}
+html.lan body.tv-cast .slide.active .player{
+  position:fixed;
+  left:0;top:0;right:0;
+  width:100vw;
+  max-width:none;
+  height:calc(100vh - var(--cast-bar, 96px));
+  padding-top:0;
+  aspect-ratio:auto;
+  border-radius:0;
+  z-index:60;
+}
+@supports (height:1dvh){
+  html.lan body.tv-cast .slide.active .player{height:calc(100dvh - var(--cast-bar, 96px))}
+}
+html.lan body.tv .player video,html.lan body.tv-cast .player video{
+  object-fit:contain;
+  background:#000;
+}
+@media(max-height:520px) and (orientation:landscape){
+  html.lan body.tv .slide,html.lan body.tv-cast .slide{
+    display:flex!important;
+    flex-direction:column!important;
+    padding:0!important;
+    gap:0!important;
+  }
+  html.lan body.tv .slide.active .player,html.lan body.tv-cast .slide.active .player{
+    position:fixed!important;
+    left:0!important;top:0!important;right:0!important;
+    width:100vw!important;
+    max-width:none!important;
+    height:calc(100dvh - var(--cast-bar, 60px))!important;
+    aspect-ratio:auto!important;
+    border-radius:0!important;
+  }
+}
 </style>
 </head>
 <body>
@@ -470,16 +509,18 @@ body.tv-cast .toast{bottom:calc(var(--cast-bar, 96px) + 12px)}
       <h2 class="sec">怎么用</h2>
       <ul>
         <li><strong>路线</strong>：「从好奇到机器学习」一共 9 关。前几关现在就能看；神经网络和 GPT 关，学过函数再看更顺；大师课要先会一点 Python。每一关最后有一个动手任务。</li>
-        <li><strong>播放</strong>：一屏一条视频，滑到哪条就播哪条。不想自动播，点顶上的「自动播放」关掉，之后要点封面才播。播放器是 B 站官方的站外播放器，没有改动。</li>
+        <li><strong>播放</strong>：一屏一条视频，滑到哪条就播哪条。不想自动播，点顶上的「自动播放」关掉，之后要点封面才播。<span class="pages-only">播放器是 B 站官方的站外播放器，没有改动。</span><span class="lan-only" hidden>这一份发现了同站的播放代理，所以用页面自己的播放器，不打开 B 站。</span></li>
         <li><strong>看完了</strong>：看完一条点「✓ 看完了」，路线会记进度。</li>
-        <li><strong>去 B 站看高清</strong>：B 站限制站外播放器最高 480P，点「看完了」旁边这个按钮到 B 站播放，登录后可看 1080P。</li>
+        <li class="pages-only"><strong>去 B 站看高清</strong>：B 站限制站外播放器最高 480P，点「看完了」旁边这个按钮到 B 站播放，登录后可看 1080P。</li>
         <li><strong>深色模式</strong>：右上角的月亮。</li>
       </ul>
       <h2 class="sec">不同设备上</h2>
       <ul>
-        <li><strong>电脑</strong>：用滚轮，或者按 <kbd>J</kbd> <kbd>K</kbd> 切换上一条下一条，切过去就自动带声音播放。快捷键：<kbd>A</kbd> 开关自动播放，<kbd>L</kbd> 播放列表，<kbd>H</kbd> 去 B 站看高清，<kbd>D</kbd> 深色模式。</li>
-        <li><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好。iPhone、iPad 上要点一下画面才出声播放，这是苹果不允许网页自动开声音，本页改不了。手机横过来，视频在左边，说明在右边。</li>
-        <li><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的镜像，不要用「只投这个视频」：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</li>
+        <li><strong>电脑</strong>：用滚轮，或者按 <kbd>J</kbd> <kbd>K</kbd> 切换上一条下一条，切过去就自动带声音播放。快捷键：<kbd>A</kbd> 开关自动播放，<kbd>L</kbd> 播放列表，<span class="pages-only"><kbd>H</kbd> 去 B 站看高清，</span><kbd>D</kbd> 深色模式。</li>
+        <li class="pages-only"><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好。iPhone、iPad 上要点一下画面才出声播放，这是苹果不允许网页自动开声音，本页改不了。手机横过来，视频在左边，说明在右边。</li>
+        <li class="lan-only" hidden><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。如果没有自动开播，点一下画面即可。手机横过来，视频在左边，说明在右边。</li>
+        <li class="pages-only"><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的镜像，不要用「只投这个视频」：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</li>
+        <li class="lan-only" hidden><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的镜像，不要用「只投这个视频」：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。镜像时手机要一直开着这一页。</li>
         <li><strong>电视、投影仪</strong>：用遥控器的打开<a href="tv.html"><strong>电视版</strong></a>：一格一格的方块，方向键挑、<kbd>OK</kbd> 播放；播放时 <kbd>▲</kbd> 标记看完，<kbd>▼</kbd> 选集、换一条，返回键回首页；<kbd>◀</kbd> <kbd>▶</kbd> 在应用里是快退 / 快进，在浏览器里是换上一条 / 下一条。看完的进度和这里共用。安卓电视、投影仪可以装 BiliPicks 电视版应用（安装方法见<a href="https://github.com/limin112/bilipicks/tree/main/android" target="_blank" rel="noopener noreferrer">开源仓库</a>），打开就是电视版，<kbd>OK</kbd> 键能暂停，<kbd>◀</kbd> <kbd>▶</kbd> 能快退快进。</li>
         <li><strong>电脑接电视、投屏</strong>：在电脑上按 <kbd>T</kbd> 或点「大屏模式」，只留视频和一条控制栏，<kbd>←</kbd> <kbd>→</kbd> 切换，<kbd>Esc</kbd> 退出。电脑上的大屏模式不会强行进入浏览器全屏。</li>
         <li><strong>换设备</strong>：看完的进度、动手任务的勾、自动播放和深色模式的设置，都只存在这台设备的浏览器里，换设备不同步，清除浏览数据会丢。</li>
@@ -487,7 +528,7 @@ body.tv-cast .toast{bottom:calc(var(--cast-bar, 96px) + 12px)}
       <h2 class="sec">关于搬运的视频</h2>
       <p>卡帕西（Andrej Karpathy）、李宏毅、吴恩达、李飞飞这些老师没有在 B 站开官方号，他们的公开课和演讲只有别人译制上传的版本。这类内容收的是字幕清楚、播放稳定的搬运版，播放页上会标「搬运」并写明原作者。3Blue1Brown、Veritasium、StatQuest、Mark Rober 这些有 B 站官方号的，一律用官方号。搬运的视频有可能被下架，失效的会自动从页面上隐藏。</p>
       <h2 class="sec">使用前请知道</h2>
-      <p>这不是逐片审过的儿童白名单：视频按标题、简介、UP 主和口碑挑选，没有每一条都从头看到尾。年龄是编辑建议，不是官方分级。商单、猎奇标题、实验危险画面仍需家长挑选。点「去 B 站看高清」之后会出现 B 站自己的推荐，建议关掉自动连播。</p>
+      <p>这不是逐片审过的儿童白名单：视频按标题、简介、UP 主和口碑挑选，没有每一条都从头看到尾。年龄是编辑建议，不是官方分级。商单、猎奇标题、实验危险画面仍需家长挑选。<span class="pages-only">点「去 B 站看高清」之后会出现 B 站自己的推荐，建议关掉自动连播。</span><span class="lan-only" hidden>开了家里的播放代理时，视频在本站域名下播放。</span></p>
       <p>动手任务里的 Quick, Draw!、Teachable Machine、TensorFlow Playground 是 Google 的网站，Python 在线壳是 python.org 的页面，有的网络打不开。分类浏览里的 Scratch 入门在麻省理工的网站上练习，同样可能打不开。</p>
       <h2 class="sec">没放进来的</h2>
       <p>低龄营销向动画、法律/职场/战争黑色幽默、地缘政治、志怪恐怖（含名字像儿童故事的）、纯数码评测、来源不明的同名杂号、标题写着「全 500 集」「学完就业」的卖课合集，都不收。</p>
@@ -633,7 +674,93 @@ const lenLabel = v => isSeries(v) ? `共 ${v.parts} 集` : mins(v.duration);
 // 老数据里有写「无」「无明显问题」的家长提示，不显示
 const cautionOf = v => (v.caution && !/^无(明显问题)?$/.test(v.caution.trim())) ? v.caution : '';
 const who = v => v.orig || v.channel;
-const cover = v => v.cover ? `<img class="cover" src="${esc(v.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '';
+// 公开的 GitHub Pages 永远用官方嵌入播放器。只有同源 /proxy/play 返回 JSON
+//（家里的树莓派把 /proxy/ 反代到本机媒体代理）才改用 <video>。
+let lanMode = false;
+const cover = v => {
+  if (!v.cover) return '';
+  if (!lanMode) return `<img class="cover" src="${esc(v.cover)}" alt="" loading="lazy" referrerpolicy="no-referrer">`;
+  return `<img class="cover" src="${esc(lanCover(v.cover))}" alt="" loading="lazy">`;
+};
+function lanCover(url) {
+  if (!url) return '';
+  if (url.startsWith('/proxy/')) return url;
+  return '/proxy/cover?u=' + encodeURIComponent(url);
+}
+function lanPlayUrl(v) {
+  const p = v.page > 1 ? v.page : 1;
+  return '/proxy/play?bvid=' + encodeURIComponent(v.id) + '&p=' + p;
+}
+function attachLanMedia(video, info, autoplay) {
+  const start = () => { if (autoplay) video.play().catch(() => {}); };
+  if (!info || info.error) throw new Error((info && info.error) || 'no play info');
+  if (info.type === 'mp4') { video.src = info.url; start(); return; }
+  if (info.type === 'hls') {
+    if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = info.url; start(); return; }
+    if (window.Hls && Hls.isSupported()) {
+      const hls = new Hls({ enableWorker: false });
+      hls.loadSource(info.url);
+      hls.attachMedia(video);
+      video._hls = hls;
+      hls.on(Hls.Events.MANIFEST_PARSED, start);
+      return;
+    }
+    throw new Error('hls unsupported');
+  }
+  throw new Error('unsupported type');
+}
+function destroyLanVideo(video) {
+  if (!video) return;
+  if (video._hls) { try { video._hls.destroy(); } catch (e) {} video._hls = null; }
+  try { video.pause(); } catch (e) {}
+  video.removeAttribute('src');
+  try { video.load(); } catch (e) {}
+}
+let hlsLoading = null;
+function loadHls() {
+  if (window.Hls) return Promise.resolve();
+  if (hlsLoading) return hlsLoading;
+  hlsLoading = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'vendor/hls.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('hls.js'));
+    document.head.appendChild(s);
+  });
+  return hlsLoading;
+}
+function detectLanProxy() {
+  // github.io 上不探测，公开站点永远用官方嵌入播放器。
+  if (/(^|\.)github\.io$/i.test(location.hostname) || location.protocol === 'file:') return Promise.resolve(false);
+  if (typeof fetch !== 'function') return Promise.resolve(false);
+  let timer;
+  const finish = (ok) => { clearTimeout(timer); return ok; };
+  try {
+    const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    timer = setTimeout(() => { if (ctrl) ctrl.abort(); }, 2000);
+    const opts = {cache: 'no-store', headers: {Accept: 'application/json'}};
+    if (ctrl) opts.signal = ctrl.signal;
+    // 空 bvid：代理应在本地返回 JSON（报错即可），不要为此去拉视频流。
+    return fetch('/proxy/play?bvid=&p=1', opts).then(r => {
+      const ct = (r.headers.get('content-type') || '').toLowerCase();
+      if (!ct.includes('json')) return null;
+      return r.json();
+    }).then(j => finish(!!(j && typeof j === 'object'))).catch(() => finish(false));
+  } catch (e) {
+    return Promise.resolve(finish(false));
+  }
+}
+function applyLanChrome() {
+  document.documentElement.classList.add('lan');
+  $$('.pages-only').forEach(el => { el.hidden = true; });
+  $$('.lan-only').forEach(el => { el.hidden = false; });
+  const hint = $('#tv-bar .hint');
+  if (hint) hint.textContent = '← → 切换，Esc 退出';
+  const cast = $('#cast-hint');
+  if (cast) cast.textContent = '先点画面播放，再横过来。用系统「屏幕镜像」，不要选只投视频。';
+  const hd = $('#tv-hd');
+  if (hd) hd.hidden = true;
+}
 const stagePill = (st, text) => `<span class="stage-pill" style="--h:${st.hue}">${esc(st.icon || '')} ${esc(text)}</span>`;
 function embedUrl(v, autoplay) {
   const p = v.page > 1 ? `&p=${v.page}` : '';
@@ -811,7 +938,9 @@ function renderTiers() {
     const n = onSite(r.name);
     return `<div class="row">
       <div class="top-line">
-        <a class="name" href="https://space.bilibili.com/${esc(r.mid)}" target="_blank" rel="noopener noreferrer">${esc(r.name)} ↗</a>
+        ${lanMode
+          ? `<span class="name">${esc(r.name)}</span>`
+          : `<a class="name" href="https://space.bilibili.com/${esc(r.mid)}" target="_blank" rel="noopener noreferrer">${esc(r.name)} ↗</a>`}
         <span class="kid ${esc(r.kid)}">${esc(KID[r.kid] || '')}</span>
       </div>
       ${extra}
@@ -874,7 +1003,9 @@ function slideHTML(v, i) {
     `<span class="tag">${v.minAge} 岁+</span>`,
     v.orig ? '<span class="tag warn">搬运</span>' : '',
   ].join('');
-  const up = `<a href="${esc(v.channelUrl || v.url)}" target="_blank" rel="noopener noreferrer">${esc(v.channel)}</a>`;
+  const up = lanMode
+    ? `<span>${esc(v.channel)}</span>`
+    : `<a href="${esc(v.channelUrl || v.url)}" target="_blank" rel="noopener noreferrer">${esc(v.channel)}</a>`;
   return `<article class="slide" data-i="${i}" style="--h:${st ? st.hue : 'var(--accent)'}">
     <div class="player">${posterHTML(v)}</div>
     <div class="info">
@@ -887,7 +1018,7 @@ function slideHTML(v, i) {
       </div>
       <div class="actions">
         <button type="button" class="btn done-btn" data-act="done"></button>
-        <a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer" title="站内播放器最高 480P；到 B 站登录后可看 1080P（快捷键 H）">去 B 站看高清</a>
+        ${lanMode ? '' : `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer" title="站内播放器最高 480P；到 B 站登录后可看 1080P（快捷键 H）">去 B 站看高清</a>`}
       </div>
       <button type="button" class="next-hint" data-act="next">${nx
         ? `<span class="arrow touch" aria-hidden="true">︿</span><span class="lbl"><span class="touch">上滑看下一条</span><span class="wide-only">下一条</span></span><span class="nt">${esc(pathInfo[nx.id] && state.ctx.cat === PATH_CAT ? pathInfo[nx.id].note : nx.title)}</span>`
@@ -904,6 +1035,7 @@ function paintDone(slide, v, pop) {
   if (pop) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
 }
 function mount(slide, v, autoplay) {
+  if (lanMode) { mountLan(slide, v, autoplay); return; }
   const box = $('.player', slide);
   if ($('iframe', box)) return;
   // 每次都新建 iframe：直接改已有 iframe 的 src 会往浏览器历史里塞记录，安卓返回键就回不到上一页
@@ -923,9 +1055,32 @@ function mount(slide, v, autoplay) {
   box.innerHTML = '';
   box.appendChild(f);
 }
+function mountLan(slide, v, autoplay) {
+  const box = $('.player', slide);
+  if ($('video', box)) return;
+  const video = document.createElement('video');
+  video.title = v.title;
+  video.controls = true;
+  video.playsInline = true;
+  video.setAttribute('playsinline', '');
+  video.setAttribute('webkit-playsinline', '');
+  video.setAttribute('webkitallowfullscreen', 'true');
+  video.setAttribute('x-webkit-airplay', 'allow');
+  video.preload = 'metadata';
+  if (v.cover) video.poster = lanCover(v.cover);
+  box.innerHTML = '';
+  box.appendChild(video);
+  fetch(lanPlayUrl(v)).then(r => r.json()).then(info => {
+    if (!video.isConnected) return;
+    if (info && info.error) { toast(info.error); return; }
+    attachLanMedia(video, info, autoplay);
+  }).catch(() => { if (video.isConnected) toast('暂时播不了，请稍后再试'); });
+}
 function unmount(slide) {
   const box = $('.player', slide);
-  if ($('iframe', box)) box.innerHTML = posterHTML(feedList[+slide.dataset.i]);
+  const video = $('video', box);
+  if (video) destroyLanVideo(video);
+  if (video || $('iframe', box)) box.innerHTML = posterHTML(feedList[+slide.dataset.i]);
 }
 // 滑到就播：默认开，手机开了「省流量」时默认关；选择记在本机
 let autoplay = store.get(AUTO_KEY, !(navigator.connection && navigator.connection.saveData));
@@ -1087,8 +1242,64 @@ function lockLandscape() {
     if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
   } catch (e) {}
 }
+function activeWatchVideo() {
+  return document.querySelector('.slide.active .player video') || document.querySelector('.player video');
+}
+function requestFs(el) {
+  const req = el && (el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen);
+  if (!req) return Promise.reject(new Error('no fs'));
+  try {
+    const ret = req.call(el);
+    return (ret && typeof ret.then === 'function') ? ret : Promise.resolve();
+  } catch (e) {
+    return Promise.reject(e);
+  }
+}
+function enterVideoFullscreen(video) {
+  return new Promise((resolve, reject) => {
+    if (!video) return reject(new Error('no video'));
+    const start = () => {
+      try {
+        if (typeof video.webkitEnterFullscreen === 'function') {
+          const onBegin = () => { video.removeEventListener('webkitbeginfullscreen', onBegin); resolve(); };
+          video.addEventListener('webkitbeginfullscreen', onBegin);
+          video.webkitEnterFullscreen();
+          setTimeout(() => { video.removeEventListener('webkitbeginfullscreen', onBegin); resolve(); }, 500);
+          return;
+        }
+        const req = video.requestFullscreen || video.webkitRequestFullscreen;
+        if (!req) return reject(new Error('no video fs'));
+        const ret = req.call(video);
+        if (ret && typeof ret.then === 'function') ret.then(resolve, reject);
+        else resolve();
+      } catch (e) { reject(e); }
+    };
+    try {
+      const playRet = video.paused ? video.play() : null;
+      if (playRet && typeof playRet.then === 'function') playRet.then(start, start);
+      else start();
+    } catch (e) { start(); }
+  });
+}
 function enterCastStage() {
   castArmed = true;
+  if (lanMode) {
+    // 先请求整页全屏（documentElement，然后 body，然后播放区）。都失败时
+    // （iPhone 常见）再走视频自己的 webkitEnterFullscreen。
+    const after = () => {
+      lockLandscape();
+      holdWake();
+      requestAnimationFrame(() => requestAnimationFrame(fitCastBar));
+    };
+    requestFs(document.documentElement)
+      .catch(() => requestFs(document.body))
+      .catch(() => requestFs(document.querySelector('.watch')))
+      .catch(() => enterVideoFullscreen(activeWatchVideo()))
+      .then(after, after);
+    holdWake();
+    requestAnimationFrame(() => requestAnimationFrame(fitCastBar));
+    return;
+  }
   const el = document.documentElement;
   const req = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
   try {
@@ -1112,6 +1323,10 @@ function leaveCastStage() {
       const ret = exit.call(document);
       if (ret && typeof ret.catch === 'function') ret.catch(() => {});
     } catch (e) {}
+  }
+  const v = activeWatchVideo();
+  if (v && v.webkitDisplayingFullscreen && typeof v.webkitExitFullscreen === 'function') {
+    try { v.webkitExitFullscreen(); } catch (e) {}
   }
 }
 function setTV(on) {
@@ -1320,13 +1535,14 @@ document.addEventListener('keydown', e => {
   else if (k === 'k' || k === 'arrowup' || k === 'arrowleft') { e.preventDefault(); step(-1); }
   else if (k === 'a') toggleAuto();
   else if (k === 'l') { $('#sheet').hidden ? openSheet() : closeSheet(); }
-  else if (k === 'h') window.open(feedList[state.idx].url, '_blank', 'noopener');
+  else if (k === 'h' && !lanMode) window.open(feedList[state.idx].url, '_blank', 'noopener');
   else if ((k === ' ' || k === 'enter') && !(el && /^(BUTTON|A|SUMMARY)$/.test(el.tagName))) { e.preventDefault(); mount(slideEl(state.idx), feedList[state.idx], true); }
 });
 
 // ---------- 封面兜底 ----------
-// 封面平时由 update.py 写进 data.js。万一哪条没有，就在访客浏览器里用 JSONP 现查：
-// api.bilibili.com 不给 CORS 头，fetch 会被拦；服务端代理（包括 Cloudflare Workers）会被 B 站返回 -412。
+// 封面平时由 update.py 写进 data.js。万一哪条没有：公开页面用 JSONP 现查
+//（api.bilibili.com 不给 CORS 头，fetch 会被拦；服务端代理会被 B 站返回 -412）。
+// 家里开了 /proxy/ 时改为问本机代理。
 // 封面加载失败就去掉 <img>，露出底下的渐变色块。error 事件不冒泡，所以在捕获阶段监听。
 document.addEventListener('error', e => {
   const img = e.target;
@@ -1352,6 +1568,14 @@ function jsonp(url, timeoutMs = 8000) {
   });
 }
 async function fetchCoverUrl(bvid) {
+  if (lanMode) {
+    try {
+      const j = await fetch('/proxy/view?bvid=' + encodeURIComponent(bvid)).then(r => r.json());
+      return (j && j.cover) || null;
+    } catch {
+      return null;
+    }
+  }
   try {
     const j = await jsonp(`https://api.bilibili.com/x/web-interface/view?bvid=${encodeURIComponent(bvid)}`);
     let pic = j && j.code === 0 && j.data && j.data.pic;
@@ -1384,13 +1608,18 @@ async function hydrateCovers() {
 
 // ---------- 启动 ----------
 applyTheme();
-{
+detectLanProxy().then(async on => {
+  lanMode = !!on;
+  if (lanMode) {
+    applyLanChrome();
+    try { await loadHls(); } catch (e) {}
+  }
   const h = parseHash();
   if (h.view === 'watch') prepareWatch(h.id);
   state.view = h.view;
   render();
-}
-hydrateCovers();
+  hydrateCovers();
+});
 </script>
 </body>
 </html>

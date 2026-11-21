@@ -19,11 +19,35 @@ python3 -m http.server 8765
 
 看完进度、动手任务勾选、深色模式和自动播放都只存在这台设备的浏览器里（键名带 `bilipicks-jh-` 前缀，不会和原版站点抢同一份记录）。换设备不同步，清除浏览数据会丢。
 
-播放器用的是 B 站官方嵌入播放器，不抓取视频流。B 站限制站外播放最高约 480P，点「去 B 站看高清」可到 B 站看更高清晰度。
+公开的 GitHub Pages 用 B 站官方嵌入播放器，不抓取、不代理视频流。B 站限制站外播放最高约 480P，点「去 B 站看高清」可到 B 站看更高清晰度。家里的树莓派如果提供同源的 `/proxy/`，同一份页面会改用本地播放器，见下文「家里的树莓派」。
 
 电视、投影仪可以用 `tv.html` 的遥控器界面；安卓电视 / 投影仪的安装方法见原仓库 [`android/`](https://github.com/limin112/bilipicks/tree/main/android)。本目录里也拷了一份 `android/`，但没有改 APK。
 
-手机要把正在看的视频放到电视上：在播放页点「投屏」，先点一下画面开始播放，把手机横过来，再用系统的「屏幕镜像」（iPhone 在控制中心，安卓是系统里的投屏或镜像，选镜像整个屏幕）。B 站官方播放器不让网页把这一条视频直接 AirPlay 或 Cast 到电视，不少片子在 B 站 App 里也会提示不能投屏。那是 B 站的限制。本站能做的是把官方播放器铺满屏幕，再由手机把这一页镜像过去。电脑上的「大屏模式」还是原来的样子，不会强行进入浏览器全屏。
+手机要把正在看的视频放到电视上：在播放页点「投屏」，先点一下画面开始播放，把手机横过来，再用系统的「屏幕镜像」（iPhone 在控制中心，安卓是系统里的投屏或镜像，选镜像整个屏幕）。没有 `/proxy/` 时用的是 B 站官方播放器。它不让网页把这一条视频直接 AirPlay 或 Cast 到电视，不少片子在 B 站 App 里也会提示不能投屏。那是 B 站的限制。本站能做的是把官方播放器铺满屏幕，再由手机把这一页镜像过去。电脑上的「大屏模式」还是原来的样子，不会强行进入浏览器全屏。开了家里的播放代理时，「投屏」仍是先铺满这一页，说明见下一节。
+
+## 家里的树莓派（局域网）
+
+公开站点 <https://ysmo.github.io/bilipicks-junior/> 始终用官方嵌入播放器。页面在 `github.io` 上不会改去探测或使用 `/proxy/`。
+
+同一份 `index.html` 和 `tv.html` 放到家里的树莓派上之后，只有同源的 `/proxy/` 真的在应答时，才改用页面里的 `<video>`：
+
+- 静态文件放在网站根目录。这台树莓派上的目录是 `/srv/share/bilipicks-junior`。
+- 本机的 nginx 把浏览器请求的 `/proxy/` 转到 `127.0.0.1:8788` 上的媒体代理。页面会访问 `/proxy/play`、`/proxy/cover` 和 `/proxy/view`。代理只给家里用，局域网主机名不要接到 Cloudflare，也不要发布到公网。
+- 打开页面时会请求 `/proxy/play?bvid=&p=1`，最多等大约 2 秒。响应的 `Content-Type` 是 JSON，才进入本地播放。普通静态服务器返回 HTML，继续用官方嵌入播放器。代理应在本机直接拒绝空的 `bvid`（返回 JSON 即可），不要为了这次探测去拉视频流。
+- Safari（包括 iPhone）能自己播 HLS，就直接把地址交给 `<video>`。其他浏览器这时才加载 `vendor/hls.min.js`。这是官方 [hls.js](https://github.com/video-dev/hls.js) 1.7.4 的 UMD 构建（`dist/hls.min.js`，Apache-2.0，许可见 `vendor/hls.LICENSE`）。公开站点不下载这个文件。
+- 手机上点「投屏」：先请求整个页面全屏（页面、然后 `body`、然后播放区）。都失败时（iPhone 上常见）再调用视频的 `webkitEnterFullscreen`。`<video>` 带 `x-webkit-airplay="allow"`。先点一下画面开始播放，把手机横过来，再用系统的「屏幕镜像」，不要选「只投这个视频」。电脑上的「大屏模式」仍然不会强行进入浏览器全屏。
+- 代理的令牌和口令留在树莓派上，不要放进这个仓库，也不要写进 nginx 配置后提交。
+
+路径前缀要和代理进程一致。下面只说明形状，不是那台机器上的完整配置：
+
+```nginx
+# 浏览器请求 /proxy/play。proxy_pass 末尾有没有斜杠，决定转给 8788 时还留不留 /proxy 前缀。
+location /proxy/ {
+    proxy_pass http://127.0.0.1:8788;
+}
+```
+
+`tools/` 里的 Quick, Draw!、Teachable Machine、TensorFlow Playground 和 Python 练习页目前只在树莓派上，不在这个仓库里。`data.js` 里的动手任务仍指向原来的公开网站。
 
 ## 路线概要
 
@@ -52,6 +76,7 @@ python3 -m http.server 8765
 | `data.js` | 所有内容：视频、成长路线、频道榜、策展人信息（必须保持 `const DATA = {...};` 单行，以便 `update.py` 读写） |
 | `update.py` | 维护脚本：检查失效视频、补封面和时长、添加新视频（只用 Python 标准库） |
 | `android/` | 原项目的安卓电视应用，本改编版未改 APK |
+| `vendor/hls.min.js` | 官方 hls.js 1.7.4。只在家里的 `/proxy/` 播放 HLS、而浏览器自己不会播时加载。许可见 `vendor/hls.LICENSE` |
 
 加视频或检查失效：
 

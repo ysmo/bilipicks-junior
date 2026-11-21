@@ -99,6 +99,7 @@ h1,h2,h3,p{margin:0}
 /* ---------- 播放 ---------- */
 .player{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:20}
 .player iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0}
+.player video{position:absolute;top:0;left:0;width:100%;height:100%;border:0;object-fit:contain;background:#000;z-index:0}
 .ov{position:absolute;left:0;right:0;z-index:2;transition:opacity .35s, transform .35s;pointer-events:none}
 .ov.top-ov{top:0;padding:2.2rem 3.5rem 4rem;background:linear-gradient(rgba(0,0,0,.85),rgba(0,0,0,0))}
 .ov.bot-ov{bottom:0;padding:4rem 3.5rem 2rem;background:linear-gradient(rgba(0,0,0,0),rgba(0,0,0,.85));display:flex;align-items:center}
@@ -191,6 +192,8 @@ var IN_APP = APP_VER > 0;
 // 应用 1.1（UA 版本 2）起，能往播放器里补按方向键，◀ ▶ 就是快退 / 快进；旧版应用和普通浏览器里 ◀ ▶ 还是换上一条 / 下一条
 var CAN_SEEK = APP_VER >= 2;
 var SEEK_STEP = 5;  // B 站播放器按一下方向键跳 5 秒
+// 公开的 GitHub Pages 永远用官方嵌入播放器。只有同源 /proxy/play 返回 JSON 才改用 <video>。
+var lanMode = false;
 
 function mins(sec) {
   if (!sec) return '';
@@ -201,10 +204,81 @@ var isSeries = function (v) { return v.parts > 1 && !v.page; };
 var lenLabel = function (v) { return isSeries(v) ? '共 ' + v.parts + ' 集' : mins(v.duration); };
 var who = function (v) { return v.orig || v.channel; };
 // 电视上方块不大，封面请 CDN 缩成小图，省内存也快
-var coverUrl = function (v) { return v.cover ? v.cover.replace(/@[^/]*$/, '') + '@480w_270h_1c.webp' : ''; };
+var coverUrl = function (v) {
+  if (!v.cover) return '';
+  var u = v.cover.replace(/@[^/]*$/, '') + '@480w_270h_1c.webp';
+  if (!lanMode) return u;
+  if (u.indexOf('/proxy/') === 0) return u;
+  return '/proxy/cover?u=' + encodeURIComponent(u);
+};
 function embedUrl(v) {
   var p = v.page > 1 ? '&p=' + v.page : '';
   return 'https://player.bilibili.com/player.html?bvid=' + encodeURIComponent(v.id) + p + '&high_quality=1&danmaku=0&autoplay=1&as_wide=1';
+}
+function lanPlayUrl(v) {
+  var p = v.page > 1 ? v.page : 1;
+  return '/proxy/play?bvid=' + encodeURIComponent(v.id) + '&p=' + p;
+}
+function attachLanMedia(video, info, autoplay) {
+  var start = function () { if (autoplay) video.play().catch(function () {}); };
+  if (!info || info.error) throw new Error((info && info.error) || 'no play info');
+  if (info.type === 'mp4') { video.src = info.url; start(); return; }
+  if (info.type === 'hls') {
+    if (video.canPlayType('application/vnd.apple.mpegurl')) { video.src = info.url; start(); return; }
+    if (window.Hls && Hls.isSupported()) {
+      var hls = new Hls({ enableWorker: false });
+      hls.loadSource(info.url);
+      hls.attachMedia(video);
+      video._hls = hls;
+      hls.on(Hls.Events.MANIFEST_PARSED, start);
+      return;
+    }
+    throw new Error('hls unsupported');
+  }
+  throw new Error('unsupported type');
+}
+function destroyLanVideo(video) {
+  if (!video) return;
+  if (video._hls) { try { video._hls.destroy(); } catch (e) {} video._hls = null; }
+  try { video.pause(); } catch (e) {}
+  video.removeAttribute('src');
+  try { video.load(); } catch (e) {}
+}
+var hlsLoading = null;
+function loadHls() {
+  if (window.Hls) return Promise.resolve();
+  if (hlsLoading) return hlsLoading;
+  hlsLoading = new Promise(function (resolve, reject) {
+    var s = document.createElement('script');
+    s.src = 'vendor/hls.min.js';
+    s.onload = function () { resolve(); };
+    s.onerror = function () { reject(new Error('hls.js')); };
+    document.head.appendChild(s);
+  });
+  return hlsLoading;
+}
+function detectLanProxy() {
+  // github.io 上不探测，公开站点永远用官方嵌入播放器。
+  if (/(^|\.)github\.io$/i.test(location.hostname) || location.protocol === 'file:') return Promise.resolve(false);
+  if (typeof fetch !== 'function') return Promise.resolve(false);
+  var timer;
+  function finish(ok) { clearTimeout(timer); return ok; }
+  try {
+    var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+    timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 2000);
+    var opts = {cache: 'no-store', headers: {Accept: 'application/json'}};
+    if (ctrl) opts.signal = ctrl.signal;
+    // 空 bvid：代理应在本地返回 JSON（报错即可），不要为此去拉视频流。
+    return fetch('/proxy/play?bvid=&p=1', opts).then(function (r) {
+      var ct = (r.headers.get('content-type') || '').toLowerCase();
+      if (ct.indexOf('json') < 0) return null;
+      return r.json();
+    }).then(function (j) {
+      return finish(!!(j && typeof j === 'object'));
+    }).catch(function () { return finish(false); });
+  } catch (e) {
+    return Promise.resolve(finish(false));
+  }
 }
 var toastTimer;
 function toast(msg, ms) {
@@ -272,7 +346,7 @@ function renderHome() {
   var nu = nextUndone(), nst = stageOf(nu), npi = pathInfo[nu.id];
   var allDone = doneCount(pathItems) === pathItems.length;
   var html = '<section class="sec"><div class="metro" id="metro">' +
-    '<div class="tile big" data-act="continue">' + (nu.cover ? '<img data-src="' + esc(nu.cover) + '" alt="" referrerpolicy="no-referrer">' : '') +
+    '<div class="tile big" data-act="continue">' + (nu.cover ? '<img data-src="' + esc(lanMode ? coverUrl(nu) : nu.cover) + '" alt="" referrerpolicy="no-referrer">' : '') +
       '<div class="shade"></div><span class="playbtn">▶</span><div class="txt"><span class="lbl">' + (allDone ? '路线全部看完了，再看一遍' : doneCount(pathItems) ? '继续闯关' : '从第 1 关开始') + '</span>' +
       '<h2>' + esc(npi.note) + '</h2><p>第 ' + nst.no + ' 关 ' + esc(nst.name) + ' · 第 ' + npi.step + ' 步 · ' + esc(lenLabel(nu)) + '</p></div></div>';
   stages.forEach(function (st) {
@@ -447,8 +521,28 @@ function showVideo(delay) {
   var box = $('#player');
   var old = box.querySelector('iframe');
   if (old) old.remove();
+  var oldVideo = box.querySelector('video');
+  if (oldVideo) { destroyLanVideo(oldVideo); oldVideo.remove(); }
   clearTimeout(mountTimer);
   mountTimer = setTimeout(function () {
+    if (lanMode) {
+      var vv = P.list[P.idx];
+      if (!vv) return;
+      var video = document.createElement('video');
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
+      video.autoplay = true;
+      video.preload = 'metadata';
+      video.tabIndex = -1;
+      if (vv.cover) video.poster = coverUrl(vv);
+      box.insertBefore(video, box.firstChild);
+      fetch(lanPlayUrl(vv)).then(function (r) { return r.json(); }).then(function (info) {
+        if (!video.isConnected) return;
+        if (info && info.error) { toast(info.error); return; }
+        attachLanMedia(video, info, true);
+      }).catch(function () { if (video.isConnected) toast('暂时播不了，请稍后再试'); });
+      return;
+    }
     var f = document.createElement('iframe');
     f.allow = 'autoplay; fullscreen; encrypted-media';
     f.setAttribute('allowfullscreen', '');
@@ -463,6 +557,8 @@ function stopPlayer() {
   clearTimeout(mountTimer); clearInterval(secTimer); clearTimeout(quietTimer);
   var f = $('#player iframe');
   if (f) f.remove();
+  var video = $('#player video');
+  if (video) { destroyLanVideo(video); video.remove(); }
   $('#player').hidden = true;
   P = null;
 }
@@ -471,10 +567,12 @@ function stopPlayer() {
 function secTick() {
   if (!P || P.paused || document.hidden) return;
   var v = P.list[P.idx];
-  P.elapsed++;
+  var video = lanMode ? $('#player video') : null;
+  if (video && !isNaN(video.currentTime) && video.currentTime > 0) P.elapsed = video.currentTime;
+  else P.elapsed++;
   if (!v.duration) return;
   if (!P.marked && !isDone(v.id) && P.elapsed >= v.duration * 0.7) { P.marked = true; setDone(v.id, true); toast('✓ 记为看完了'); }
-  if (isSeries(v) || P.elapsed < v.duration + 8) return;
+  if (isSeries(v) || (video ? (!(video.ended) && P.elapsed < v.duration + 8) : P.elapsed < v.duration + 8)) return;
   var nx = P.list[P.idx + 1];
   if (!nx) { P.paused = true; toast('这个列表看完了，按返回回首页', 6000); return; }
   if (P.path && stageOf(nx) !== stageOf(v)) {
@@ -559,6 +657,11 @@ function playerKey(k) {
     P.paused = !P.paused;
     $('#player').classList.toggle('is-paused', P.paused);
     wake();
+    if (lanMode) {
+      var pv = $('#player video');
+      if (pv) { if (P.paused) pv.pause(); else pv.play().catch(function () {}); }
+      return;
+    }
     // 应用里由安卓那边往播放器里按一下空格；普通浏览器里做不到（跨域 iframe），只能提示
     if (IN_APP) { var f = $('#player iframe'); if (f) f.focus(); return 'space'; }
     toast('请用播放器自己的按钮暂停');
@@ -577,6 +680,19 @@ function playerKey(k) {
 // 连着按会累计显示「快进 30 秒」；估算的已看时长也跟着挪，不然自动记看完、自动下一条会错位
 var seekAcc = 0, seekTimer;
 function seek(dir) {
+  if (lanMode) {
+    var pv = $('#player video');
+    if (!pv) return;
+    var next = Math.max(0, (pv.currentTime || 0) + dir * SEEK_STEP);
+    if (!isNaN(pv.duration) && pv.duration > 0) next = Math.min(pv.duration, next);
+    pv.currentTime = next;
+    P.elapsed = next;
+    seekAcc += dir * SEEK_STEP;
+    clearTimeout(seekTimer);
+    seekTimer = setTimeout(function () { seekAcc = 0; }, 1500);
+    toast((seekAcc >= 0 ? '⏩ 快进 ' : '⏪ 快退 ') + Math.abs(seekAcc) + ' 秒', 1200);
+    return dir > 0 ? 'seek+' : 'seek-';
+  }
   if (!$('#player iframe')) return;
   seekAcc += dir * SEEK_STEP;
   clearTimeout(seekTimer);
@@ -701,8 +817,19 @@ window.tvUpdateState = function (st, arg) {
 // ---------- 启动 ----------
 tick();
 setInterval(tick, 15000);
-if (CAN_SEEK) { $('#k-lr').textContent = '快退 / 快进'; $('#k-down').textContent = '选集 · 换一条'; }
-loadData().then(function (data) {
+function paintSeekHint() {
+  if (CAN_SEEK) { $('#k-lr').textContent = '快退 / 快进'; $('#k-down').textContent = '选集 · 换一条'; }
+}
+paintSeekHint();
+Promise.all([loadData(), detectLanProxy()]).then(function (pair) {
+  var data = pair[0];
+  lanMode = !!pair[1];
+  if (!lanMode) return data;
+  document.documentElement.classList.add('lan');
+  CAN_SEEK = true;
+  paintSeekHint();
+  return loadHls().catch(function () {}).then(function () { return data; });
+}).then(function (data) {
   prepare(data);
   $('#sub').textContent = (D.path && D.path.title ? D.path.title + ' · ' : '') + '电视版';
   $('#msg').hidden = true;
