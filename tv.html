@@ -452,6 +452,8 @@ function showVideo(delay) {
     var f = document.createElement('iframe');
     f.allow = 'autoplay; fullscreen; encrypted-media';
     f.setAttribute('allowfullscreen', '');
+    f.setAttribute('webkitallowfullscreen', 'true');
+    f.setAttribute('mozallowfullscreen', 'true');
     f.tabIndex = -1;
     f.src = embedUrl(v);
     box.insertBefore(f, box.firstChild);

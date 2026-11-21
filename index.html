@@ -6,7 +6,8 @@
 <meta name="theme-color" content="#f1f5fa">
 <meta name="description" content="BiliPicks — 家长给初中孩子手选的 B 站视频：从好奇到机器学习的 9 关闯关路线、B 站频道榜、AI 入门课，无推荐算法。">
 <title>BiliPicks · 从好奇到机器学习</title>
-<script>try{if(localStorage.getItem('bilipicks-jh-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}</script>
+<script>try{if(localStorage.getItem('bilipicks-jh-theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}
+try{var _ua=navigator.userAgent||'';if(/iPad/.test(_ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(hover: none) and (pointer: coarse)').matches)document.documentElement.classList.add('handheld')}catch(e){}</script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -289,7 +290,7 @@ kbd{font:inherit;font-weight:700;font-size:12.5px;padding:1px 7px;border-radius:
 .q .t{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:700;font-size:13.5px;line-height:1.4}
 .q .s{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
-/* 大屏模式 */
+/* 大屏模式（电脑）。手机投屏另加 body.tv-cast，样式在文件末尾，不改这里。 */
 .tv-bar{display:none}
 body.tv .top,body.tv .tabs,body.tv .feed-top{display:none}
 body.tv .watch{inset:0;background:#000;z-index:50}
@@ -402,6 +403,40 @@ body.tv .tv-bar{position:fixed;left:0;right:0;bottom:0;height:60px;z-index:61;di
   .mission{border-color:var(--line);background:var(--surface)}
   .why{background:var(--bg)}
 }
+
+/* 手机、平板投到电视。
+   电脑大屏模式只有 body.tv，没有 tv-cast，上面的控制栏保持原样。
+   窄窗口或触控设备才显示「投屏」，并进入这一套铺满屏幕的样式。 */
+#btn-tv .label-cast,#tv-exit .label-cast,.cast-hint{display:none}
+html.handheld #btn-tv .label-desk,html.handheld #tv-exit .label-desk{display:none}
+html.handheld #btn-tv .label-cast,html.handheld #tv-exit .label-cast{display:inline}
+@media(max-width:760px){
+  #btn-tv .label-desk,#tv-exit .label-desk{display:none}
+  #btn-tv .label-cast,#tv-exit .label-cast{display:inline}
+  .feed-top .btn.sm{padding:0 10px}
+}
+body.tv-cast{background:#000;overflow:hidden}
+body.tv-cast .feed{overflow:hidden;touch-action:none}
+body.tv-cast .slide.active .player{
+  left:0;right:0;width:100%;max-width:100%;
+  height:calc(100vh - var(--cast-bar, 96px));
+  padding-top:0;
+}
+@supports (height:1dvh){
+  body.tv-cast .slide.active .player{height:calc(100dvh - var(--cast-bar, 96px))}
+}
+body.tv-cast .tv-bar{
+  height:auto;flex-wrap:wrap;align-items:center;gap:8px;
+  padding:8px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+}
+body.tv-cast .tv-bar h2{flex:1 1 0;min-width:0;font-size:14px}
+body.tv-cast .tv-bar .btn{flex:none}
+body.tv-cast .tv-bar .hint,body.tv-cast #tv-hd{display:none!important}
+body.tv-cast .cast-hint{
+  display:block;flex:1 0 100%;order:5;margin:0;
+  color:#c5d0e0;font-size:12.5px;font-weight:600;line-height:1.45;white-space:normal;
+}
+body.tv-cast .toast{bottom:calc(var(--cast-bar, 96px) + 12px)}
 </style>
 </head>
 <body>
@@ -443,9 +478,10 @@ body.tv .tv-bar{position:fixed;left:0;right:0;bottom:0;height:60px;z-index:61;di
       <h2 class="sec">不同设备上</h2>
       <ul>
         <li><strong>电脑</strong>：用滚轮，或者按 <kbd>J</kbd> <kbd>K</kbd> 切换上一条下一条，切过去就自动带声音播放。快捷键：<kbd>A</kbd> 开关自动播放，<kbd>L</kbd> 播放列表，<kbd>H</kbd> 去 B 站看高清，<kbd>D</kbd> 深色模式。</li>
-        <li><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好，但 B 站在手机和平板上用的播放器不会自己开播，要点一下画面才开始，这是 B 站的规定，网页改不了。手机横过来，视频在左边，说明在右边。</li>
+        <li><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好。iPhone、iPad 上要点一下画面才出声播放，这是苹果不允许网页自动开声音，本页改不了。手机横过来，视频在左边，说明在右边。</li>
+        <li><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的镜像，不要用「只投这个视频」：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</li>
         <li><strong>电视、投影仪</strong>：用遥控器的打开<a href="tv.html"><strong>电视版</strong></a>：一格一格的方块，方向键挑、<kbd>OK</kbd> 播放；播放时 <kbd>▲</kbd> 标记看完，<kbd>▼</kbd> 选集、换一条，返回键回首页；<kbd>◀</kbd> <kbd>▶</kbd> 在应用里是快退 / 快进，在浏览器里是换上一条 / 下一条。看完的进度和这里共用。安卓电视、投影仪可以装 BiliPicks 电视版应用（安装方法见<a href="https://github.com/limin112/bilipicks/tree/main/android" target="_blank" rel="noopener noreferrer">开源仓库</a>），打开就是电视版，<kbd>OK</kbd> 键能暂停，<kbd>◀</kbd> <kbd>▶</kbd> 能快退快进。</li>
-        <li><strong>电脑接电视、投屏</strong>：在电脑上按 <kbd>T</kbd> 或点「大屏模式」，只留视频和一条控制栏，<kbd>←</kbd> <kbd>→</kbd> 切换，<kbd>Esc</kbd> 退出。</li>
+        <li><strong>电脑接电视、投屏</strong>：在电脑上按 <kbd>T</kbd> 或点「大屏模式」，只留视频和一条控制栏，<kbd>←</kbd> <kbd>→</kbd> 切换，<kbd>Esc</kbd> 退出。电脑上的大屏模式不会强行进入浏览器全屏。</li>
         <li><strong>换设备</strong>：看完的进度、动手任务的勾、自动播放和深色模式的设置，都只存在这台设备的浏览器里，换设备不同步，清除浏览数据会丢。</li>
       </ul>
       <h2 class="sec">关于搬运的视频</h2>
@@ -473,7 +509,7 @@ body.tv .tv-bar{position:fixed;left:0;right:0;bottom:0;height:60px;z-index:61;di
       <button type="button" class="btn sm wide-only" id="btn-next" title="快捷键 J">下一条</button>
       <button type="button" class="btn sm auto-btn" id="btn-auto" aria-pressed="true">自动播放</button>
       <button type="button" class="btn sm" id="btn-list" title="快捷键 L">列表</button>
-      <button type="button" class="btn sm wide-only" id="btn-tv" title="快捷键 T">大屏模式</button>
+      <button type="button" class="btn sm" id="btn-tv" title="快捷键 T"><span class="label-desk">大屏模式</span><span class="label-cast">投屏</span></button>
     </div>
     <div class="feed" id="feed"></div>
   </section>
@@ -500,7 +536,8 @@ body.tv .tv-bar{position:fixed;left:0;right:0;bottom:0;height:60px;z-index:61;di
   <span class="hint">← → 切换，H 去 B 站看高清，Esc 退出</span>
   <a class="btn sm" id="tv-hd" target="_blank" rel="noopener noreferrer">去 B 站看高清</a>
   <button type="button" class="btn sm" id="tv-next">下一条</button>
-  <button type="button" class="btn sm" id="tv-exit">退出大屏</button>
+  <p class="cast-hint" id="cast-hint">先点画面播放，再横过来。用系统「屏幕镜像」，不要选只投视频。B 站不能直接把这条投到电视。</p>
+  <button type="button" class="btn sm" id="tv-exit"><span class="label-desk">退出大屏</span><span class="label-cast">退出投屏</span></button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -600,7 +637,10 @@ const cover = v => v.cover ? `<img class="cover" src="${esc(v.cover)}" alt="" lo
 const stagePill = (st, text) => `<span class="stage-pill" style="--h:${st.hue}">${esc(st.icon || '')} ${esc(text)}</span>`;
 function embedUrl(v, autoplay) {
   const p = v.page > 1 ? `&p=${v.page}` : '';
-  return `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(v.id)}${p}&high_quality=1&danmaku=0&autoplay=${autoplay ? 1 : 0}&as_wide=1`;
+  // autoplay 用 true/false：电脑上的官方播放器 1/0 和 true/false 都认。
+  // 手机上官方播放器会跳到 www.bilibili.com 的另一套，只把字符串 true 当成「开」。
+  // danmaku=0 关电脑播放器的弹幕；danmakuClosed=true 关手机那套（它不认 danmaku=0）。
+  return `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(v.id)}${p}&high_quality=1&danmaku=0&danmakuClosed=true&autoplay=${autoplay ? 'true' : 'false'}&as_wide=1`;
 }
 let toastTimer;
 function toast(msg) {
@@ -869,8 +909,15 @@ function mount(slide, v, autoplay) {
   // 每次都新建 iframe：直接改已有 iframe 的 src 会往浏览器历史里塞记录，安卓返回键就回不到上一页
   const f = document.createElement('iframe');
   f.title = v.title;
-  f.allow = 'autoplay; fullscreen; encrypted-media; picture-in-picture';
+  // 手机上的官方播放器会从 player.bilibili.com 跳到 www.bilibili.com。
+  // allow="fullscreen" 只放行最初那个网址，跳转之后浏览器会拒绝全屏（Disallowed by permissions policy）。
+  // 写成 fullscreen * 才和 allowfullscreen 一样，跳转后的官方播放器也能申请全屏。
+  // 不要再改回不带 * 的 fullscreen，它会盖过 allowfullscreen。
+  f.allow = 'autoplay *; fullscreen *; encrypted-media *; picture-in-picture *';
   f.allowFullscreen = true;
+  f.setAttribute('allowfullscreen', 'true');
+  f.setAttribute('webkitallowfullscreen', 'true');
+  f.setAttribute('mozallowfullscreen', 'true');
   f.referrerPolicy = 'no-referrer-when-downgrade';
   f.src = embedUrl(v, autoplay);
   box.innerHTML = '';
@@ -1004,13 +1051,84 @@ function openSheet() {
 }
 const closeSheet = () => { $('#sheet').hidden = true; };
 
-// 大屏模式
+// 大屏模式。电脑只改样式；手机和平板再申请浏览器全屏，方便系统「屏幕镜像」铺满电视。
+function useCastFullscreen() {
+  return document.documentElement.classList.contains('handheld') || matchMedia('(max-width: 760px)').matches;
+}
+function paintTvButton() {
+  const b = $('#btn-tv');
+  if (useCastFullscreen()) {
+    b.title = '铺满屏幕，再用手机的屏幕镜像投到电视';
+    b.setAttribute('aria-label', '投屏到电视');
+  } else {
+    b.title = '快捷键 T';
+    b.setAttribute('aria-label', '大屏模式');
+  }
+}
+function fitCastBar() {
+  if (!document.body.classList.contains('tv-cast')) return;
+  const h = Math.ceil($('#tv-bar').getBoundingClientRect().height);
+  if (h) document.documentElement.style.setProperty('--cast-bar', h + 'px');
+}
+let castArmed = false;
+let wakeLockSentinel = null;
+function holdWake() {
+  if (!navigator.wakeLock) return;
+  navigator.wakeLock.request('screen').then(s => { wakeLockSentinel = s; }).catch(() => {});
+}
+function releaseWake() {
+  if (!wakeLockSentinel) return;
+  const s = wakeLockSentinel;
+  wakeLockSentinel = null;
+  s.release().catch(() => {});
+}
+function lockLandscape() {
+  try {
+    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+  } catch (e) {}
+}
+function enterCastStage() {
+  castArmed = true;
+  const el = document.documentElement;
+  const req = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
+  try {
+    if (req) {
+      const ret = req.call(el);
+      if (ret && typeof ret.then === 'function') ret.then(lockLandscape).catch(() => {});
+    }
+  } catch (e) {}
+  holdWake();
+  requestAnimationFrame(() => requestAnimationFrame(fitCastBar));
+}
+function leaveCastStage() {
+  document.documentElement.style.removeProperty('--cast-bar');
+  releaseWake();
+  if (!castArmed) return;
+  castArmed = false;
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+  const exit = document.exitFullscreen || document.webkitExitFullscreen;
+  if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
+    try {
+      const ret = exit.call(document);
+      if (ret && typeof ret.catch === 'function') ret.catch(() => {});
+    } catch (e) {}
+  }
+}
 function setTV(on) {
   if (on && state.view !== 'watch') go('watch');
   if (on && !feedList.length) return;
+  const cast = !!(on && useCastFullscreen());
   state.tv = on;
   document.body.classList.toggle('tv', on);
-  if (on) { closeSheet(); mount(slideEl(state.idx), feedList[state.idx], true); }
+  document.body.classList.toggle('tv-cast', cast);
+  if (on) {
+    closeSheet();
+    mount(slideEl(state.idx), feedList[state.idx], true);
+    if (cast) enterCastStage();
+    else leaveCastStage();
+  } else {
+    leaveCastStage();
+  }
 }
 
 // ---------- 路由 ----------
@@ -1086,6 +1204,11 @@ window.addEventListener('scroll', () => {
 }, {passive: true});
 window.addEventListener('resize', () => {
   if (state.view === 'watch' && feedList.length) feed.scrollTop = state.idx * feed.clientHeight;
+  paintTvButton();
+  fitCastBar();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && document.body.classList.contains('tv-cast')) holdWake();
 });
 
 // ---------- 事件 ----------
@@ -1167,6 +1290,7 @@ $('#btn-list').onclick = openSheet;
 $('#btn-auto').onclick = toggleAuto;
 paintAuto();
 $('#btn-tv').onclick = () => setTV(true);
+paintTvButton();
 $('#tv-prev').onclick = () => step(-1);
 $('#tv-next').onclick = () => step(1);
 $('#tv-exit').onclick = () => setTV(false);
