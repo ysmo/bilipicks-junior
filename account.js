@@ -1,7 +1,7 @@
 /* BiliPicks 账号和进度。
    访客继续用原来的 localStorage（小学 bilipicks-g1-*，初中 bilipicks-jh-*）。
-   配好 config.js 之后，用 Supabase Auth（邮箱 + 密码）和 PostgREST。
-   只使用 anon 公钥。换一个 Supabase 项目，或换成同一套 Auth / REST 的服务时，改 config.js 即可。
+   公开页面用 config.public.js 里的 Supabase 网址和 anon 公钥；本机的 config.js 可以覆盖。
+   只使用 anon 公钥。换一个 Supabase 项目，或换成同一套 Auth / REST 的服务时，改配置文件即可。
    电视版会加载这个文件，所以不用 ?. 、?? 这些较新的语法。 */
 (function (global) {
   var TRACKS = {
@@ -335,23 +335,38 @@
     if (key.length < 20) return false;
     return { url: url, anonKey: key };
   }
+  var UNCONFIGURED = '云端登录还没配置。公开页面用 config.public.js，本机的 config.js 可以覆盖它。';
+  // 已有能用的配置就用它。否则先试本机 config.js；404 或值不可用时再读 config.public.js。
   function loadConfig() {
     return new Promise(function (resolve) {
-      if (global.BILIPICKS_CONFIG) {
-        resolve(usableConfig(global.BILIPICKS_CONFIG) || null);
+      var ready = usableConfig(global.BILIPICKS_CONFIG);
+      if (ready) {
+        resolve(ready);
         return;
       }
-      var s = document.createElement('script');
-      var done = false;
-      function finish(v) {
-        if (done) return;
-        done = true;
-        resolve(v || null);
+      function loadScript(src, next) {
+        var s = document.createElement('script');
+        var done = false;
+        function finish() {
+          if (done) return;
+          done = true;
+          next();
+        }
+        s.src = src;
+        s.onload = finish;
+        s.onerror = finish;
+        document.head.appendChild(s);
       }
-      s.src = 'config.js';
-      s.onload = function () { finish(usableConfig(global.BILIPICKS_CONFIG)); };
-      s.onerror = function () { finish(null); };
-      document.head.appendChild(s);
+      loadScript('config.js', function () {
+        var local = usableConfig(global.BILIPICKS_CONFIG);
+        if (local) {
+          resolve(local);
+          return;
+        }
+        loadScript('config.public.js', function () {
+          resolve(usableConfig(global.BILIPICKS_CONFIG) || null);
+        });
+      });
     });
   }
 
@@ -604,7 +619,7 @@
   function signUp(email, password) {
     var bad = checkEmailPassword(email, password);
     if (bad) return Promise.resolve({ ok: false, error: bad });
-    if (!config) return Promise.resolve({ ok: false, error: '云端登录还没配置。' });
+    if (!config) return Promise.resolve({ ok: false, error: UNCONFIGURED });
     return api('/auth/v1/signup', {
       method: 'POST',
       token: config.anonKey,
@@ -619,7 +634,7 @@
   function signIn(email, password) {
     var bad = checkEmailPassword(email, password);
     if (bad) return Promise.resolve({ ok: false, error: bad });
-    if (!config) return Promise.resolve({ ok: false, error: '云端登录还没配置。' });
+    if (!config) return Promise.resolve({ ok: false, error: UNCONFIGURED });
     return api('/auth/v1/token?grant_type=password', {
       method: 'POST',
       token: config.anonKey,
