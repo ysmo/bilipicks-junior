@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f1f5fa">
-<meta name="description" content="BiliPicks — 家长手选的 B 站视频。小学「从好奇到会看」，初中「从好奇到机器学习」。没有推荐算法。">
+<meta name="description" content="BiliPicks — 一个网站，很多门课。家长给孩子选课，比如「从好奇到会看」和「初中生学 AI」。没有推荐算法。">
 <title>BiliPicks</title>
 <script>try{
   var q=(new URLSearchParams(location.search).get('track')||'').toLowerCase();
@@ -449,16 +449,20 @@ body.tv-cast .toast{bottom:calc(var(--cast-bar, 96px) + 12px)}
 body:not(.ready) .top,body:not(.ready) main,body:not(.ready) .tabs{visibility:hidden}
 body.picking main,body.picking .tabs,body.picking .nav,body.picking .search,body.picking #btn-track,body.picking #btn-theme{display:none!important}
 .track-wrap{position:relative;flex:none}
-.pop{position:absolute;top:calc(100% + 8px);right:0;z-index:45;width:min(280px,78vw);padding:8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.pop{position:absolute;top:calc(100% + 8px);right:0;z-index:45;width:min(320px,86vw);padding:8px;border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
 .pop button{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:12px;font-weight:800}
+.pop button b{display:block}
+.pop button small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;line-height:1.4}
+#btn-track{max-width:8.5em;overflow:hidden;text-overflow:ellipsis}
 .pop button:hover,.pop button.on{background:var(--soft)}
 .pop p{color:var(--muted);font-size:12.5px;line-height:1.5;padding:4px 8px 6px}
 .gate{position:fixed;inset:0;z-index:65;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:var(--bg);overflow:auto}
 .gate-card{width:min(760px,100%);margin:auto}
 .gate h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.4px;line-height:1.2;margin:8px 0 8px}
 .gate-lead,.note{color:var(--muted);line-height:1.7}
-.choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
-.choice{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-height:148px}
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:16px}
+.choice{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-height:148px}
+.choice.on b::before{content:"✓ ";color:var(--accent)}
 .choice b{font-size:22px;font-weight:800}
 .choice span{font-weight:800}
 .choice small{color:var(--muted);font-weight:600;line-height:1.5}
@@ -467,7 +471,33 @@ body.picking main,body.picking .tabs,body.picking .nav,body.picking .search,body
 .field{display:flex;flex-direction:column;gap:6px;margin:12px 0}
 .field span{font-weight:800;font-size:14px}
 .field input,.field select{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px}
+.checkline{display:flex;align-items:center;gap:8px;padding:8px 0;font-weight:700}
+.checkline small{color:var(--muted);font-weight:600}
+.checkline input{width:18px;height:18px;flex:none}
 .account-body{padding:8px 18px 22px;overflow:auto}
+#account-title{font-size:18px}
+#account-sub{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kids{list-style:none;margin:10px 0 6px;padding:0;display:flex;flex-direction:column;gap:8px}
+.kid{width:100%;display:flex;align-items:center;gap:12px;text-align:left;padding:10px 12px;border-radius:16px;background:var(--bg);border:1px solid transparent}
+.kid:hover{border-color:var(--line)}
+.kid.on{background:var(--surface);border-color:color-mix(in oklab,var(--accent) 55%,var(--line));box-shadow:var(--shadow)}
+.kid-mark{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:var(--soft);font-weight:800;flex:none}
+.kid.on .kid-mark{background:color-mix(in oklab,var(--accent) 16%,var(--surface));color:var(--accent)}
+.kid-main{min-width:0;flex:1}
+.kid-main b{display:block;font-size:16px;line-height:1.3}
+.kid-main small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;line-height:1.45}
+.kid-now{flex:none;font-size:12px;font-weight:800;color:var(--accent)}
+.kid-courses{margin:4px 2px 8px}
+.kid-courses summary{cursor:pointer;font-weight:700;padding:8px 0;color:var(--ink)}
+.add-box{margin-top:8px;padding:4px 12px 8px;border-radius:16px;background:var(--bg)}
+.add-box .field{margin:10px 0}
+.text-add,.text-quiet,.text-danger{display:inline-flex;align-items:center;min-height:40px;padding:0 2px;font-weight:700;background:none;color:var(--muted)}
+.text-add{color:var(--accent)}
+.text-danger{color:#9f1239}
+:root.dark .text-danger{color:#fda4af}
+.sheet-foot{margin-top:18px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-start}
+.quiet{color:var(--muted);font-size:13.5px;line-height:1.65}
+.pipl{color:var(--muted);font-size:12.5px;line-height:1.65;margin-top:14px}
 .err{color:#9f1239;font-weight:700;font-size:14px}
 :root.dark .err{color:#fda4af}
 .modal{position:fixed;inset:0;z-index:85;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(10,16,26,.42)}
@@ -526,11 +556,10 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
     <input id="search" type="search" placeholder="搜视频、UP 主、分类" aria-label="搜索" enterkeyhint="search">
   </label>
   <div class="track-wrap">
-    <button type="button" class="btn sm" id="btn-track" hidden>路线</button>
+    <button type="button" class="btn sm" id="btn-track" hidden>选课</button>
     <div class="pop" id="track-menu" hidden>
-      <button type="button" data-track="g1">小学 · 从好奇到会看</button>
-      <button type="button" data-track="jh">初中 · 从好奇到机器学习</button>
-      <p>换一条不会清掉另一边已经看过的记录。</p>
+      <p>换一门课不会清掉其他课已经看过的记录。</p>
+      <div id="track-menu-list"></div>
     </div>
   </div>
   <button type="button" class="btn sm" id="btn-account">登录</button>
@@ -541,26 +570,16 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
 <div class="gate" id="gate" hidden>
   <div class="gate-card">
     <a class="logo" href="./" aria-label="BiliPicks"><span class="mark">▶</span><span>BiliPicks</span></a>
-    <h1>先选一条路线</h1>
-    <p class="gate-lead">家里可以一个孩子看小学，一个孩子看初中。两条路线的进度分开记，以后随时能换。</p>
+    <h1>给孩子选一门课</h1>
+    <p class="gate-lead">这是一个网站，里面有很多门课。家长替孩子挑，比如「初中生学 AI」。以后还可以再加课，每门课的进度分开留着。</p>
     <div class="field" id="gate-name-field" hidden>
       <span>这个孩子在家里怎么叫</span>
       <input id="gate-name" maxlength="24" autocomplete="off" placeholder="比如：姐姐、弟弟。不是姓名">
     </div>
-    <div class="choices">
-      <button type="button" class="choice" data-track="g1">
-        <b>小学</b>
-        <span>从好奇到会看</span>
-        <small>故事、小动物、博物馆，和简单的「为什么」</small>
-      </button>
-      <button type="button" class="choice" data-track="jh">
-        <b>初中</b>
-        <span>从好奇到机器学习</span>
-        <small>9 关闯关，从好奇走到神经网络</small>
-      </button>
-    </div>
+    <div class="choices" id="gate-choices"></div>
     <p class="err" id="gate-err" hidden></p>
     <div class="gate-actions">
+      <button type="button" class="btn primary" id="gate-go" hidden>用这些课开始</button>
       <button type="button" class="btn" id="gate-login">家长登录 / 注册</button>
     </div>
   </div>
@@ -585,7 +604,7 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
       <div class="kpis" id="about-kpis"></div>
       <h2 class="sec">怎么用</h2>
       <ul>
-        <li><strong>路线</strong>：<span id="about-route"></span></li>
+        <li><strong>这门课</strong>：<span id="about-route"></span></li>
         <li><strong>播放</strong>：一屏一条视频，滑到哪条就播哪条。不想自动播，点顶上的「自动播放」关掉，之后要点封面才播。<span class="pages-only">播放器是 B 站官方的站外播放器，没有改动。</span><span class="lan-only" hidden>这一份发现了同站的播放代理，所以用页面自己的播放器，不打开 B 站。</span></li>
         <li><strong>看完了</strong>：看完一条点「✓ 看完了」，路线会记进度。</li>
         <li class="pages-only"><strong>去 B 站看高清</strong>：B 站限制站外播放器最高 480P，点「看完了」旁边这个按钮到 B 站播放，登录后可看 1080P。</li>
@@ -920,7 +939,7 @@ function renderHero() {
     main = '';
   } else if (!nx) {
     main = `<div class="hero-main" style="grid-template-columns:1fr"><div>
-      <p class="hero-kicker">${esc(PATH.title)}</p>
+      <p class="hero-kicker">${esc(BP.label && BP.label !== PATH.title ? BP.label + ' · ' + PATH.title : (PATH.title || BP.label || ''))}</p>
       <h1>${n} 条全看完了，${stages.length} 关通关</h1>
       <p class="hero-sub">${esc(BP.track === 'g1' ? '这条路线看完了。以后想看的时候，再打开一条就好，看完就停。' : '接下来别停在看视频上：找一个你想解决的小问题，自己写代码试一试。')}</p>
       <div class="hero-actions"><button type="button" class="btn" data-go="path">回看整条路线</button></div>
@@ -932,7 +951,7 @@ function renderHero() {
         ${cover(nx)}<span class="playdot" aria-hidden="true">▶</span>${nx.duration ? `<span class="dur">${esc(clock(nx.duration))}</span>` : ''}
       </button>
       <div>
-        <p class="hero-kicker">${stagePill(cur, `第 ${cur.no} 关`)}<span>${esc(PATH.title)}，${d ? `已看 ${d} / ${n}` : `一共 ${stages.length} 关`}</span></p>
+        <p class="hero-kicker">${stagePill(cur, `第 ${cur.no} 关`)}<span>${esc(BP.label && BP.label !== PATH.title ? BP.label + ' · ' + PATH.title : (PATH.title || BP.label || ''))}，${d ? `已看 ${d} / ${n}` : `一共 ${stages.length} 关`}</span></p>
         <h1>${esc(pi.note)}</h1>
         <p class="hero-sub">${esc(nx.title)}</p>
         <div class="hero-actions">
@@ -1032,7 +1051,7 @@ function renderPath(openStage) {
     </div>
     <details class="parents"><summary>给家长的 ${(PATH.tips || []).length} 条建议</summary><ul>${(PATH.tips || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>
     ${html}
-    <p class="fine">${BP.mode === 'cloud' ? '进度记在当前孩子的云端档案里，手机、电视和其他浏览器登录同一个孩子就能接着看。另一条路线的记录还在。' : '还没登录时，进度只记在这台设备的浏览器里，小学和初中各记各的。清除浏览数据会丢。'}在播放页点「✓ 看完了」打勾，再点一次取消。</p>`;
+    <p class="fine">${BP.mode === 'cloud' ? '进度记在当前孩子的云端档案里，手机、电视和其他浏览器登录同一个孩子就能接着看。换一门课不会清掉其他课的记录。' : '还没登录时，每门课的进度分开记在这台设备上。清除浏览数据会丢。'}在播放页点「✓ 看完了」打勾，再点一次取消。</p>`;
 }
 
 // ---------- 频道榜 ----------
@@ -1097,7 +1116,7 @@ function renderAbout() {
   const s = DATA.site || {};
   const who = [s.curator, s.curatorHandle].filter(Boolean);
   $('#about-curator').textContent = who.length > 1 ? `${who[0]}（${who[1]}）` : (who[0] || '家长');
-  $('#about-audience').textContent = s.audience || '初中';
+  $('#about-audience').textContent = s.audience || '孩子';
   const name = esc(who.join(' · ') || '家长');
   const link = s.curatorUrl ? `<a href="${esc(s.curatorUrl)}" target="_blank" rel="noopener noreferrer">${name}</a>` : name;
   $('#about-credit').innerHTML = `策展：${link}${s.timezone ? `（${esc(s.timezone)}）` : ''}`;
@@ -1111,10 +1130,10 @@ function renderAbout() {
     : '目标是培养科学兴趣，并走向理解机器学习。所以先看 AI 有多厉害，再弄懂它怎么学，然后自己动手；旁边配上自然、科学、历史、数学这些开眼界的内容。';
   $('#about-route').textContent = g1
     ? '「从好奇到会看」一共 6 关，都是现在就能看的小片子。每一关最后有一个在家里做的小任务，比如折纸、看云、数一数，不用打开国外的网站。'
-    : '「从好奇到机器学习」一共 9 关。前几关现在就能看；神经网络和 GPT 关，学过函数再看更顺；大师课要先会一点 Python。每一关最后有一个动手任务。';
+    : '「初中生学 AI」里的路线叫「从好奇到机器学习」，一共 9 关。前几关现在就能看；神经网络和 GPT 关，学过函数再看更顺；大师课要先会一点 Python。每一关最后有一个动手任务。';
   $('#about-sync').textContent = BP.mode === 'cloud'
-    ? '登录之后，看完的进度、动手任务、自动播放、深色模式和播放位置记在当前孩子的档案里。手机、电视和其他浏览器登录同一个孩子就能接着看。换一条路线不会清掉另一边。'
-    : '还没登录时，看完的进度、动手任务、自动播放和深色模式只存在这台设备上，小学和初中各记各的。换设备不同步，清除浏览数据会丢。家长登录后可以同步到云端。';
+    ? '登录之后，看完的进度、动手任务、自动播放、深色模式和播放位置记在当前孩子的档案里，按课程分开。手机、电视和其他浏览器登录同一个孩子就能接着看。换一门课不会清掉其他课。'
+    : '还没登录时，看完的进度、动手任务、自动播放和深色模式只存在这台设备上，每门课各记各的。换设备不同步，清除浏览数据会丢。家长登录后可以同步到云端。';
   $('#about-repost').textContent = g1
     ? '本清单主要收博物馆、科技馆、动物园和教材出版社的官方视频。如果有搬运、译制的片子，播放页上会标「搬运」并写明原作者。搬运的视频有可能被下架，失效的会自动从页面上隐藏。'
     : '卡帕西（Andrej Karpathy）、李宏毅、吴恩达、李飞飞这些老师没有在 B 站开官方号，他们的公开课和演讲只有别人译制上传的版本。这类内容收的是字幕清楚、播放稳定的搬运版，播放页上会标「搬运」并写明原作者。3Blue1Brown、Veritasium、StatQuest、Mark Rober 这些有 B 站官方号的，一律用官方号。搬运的视频有可能被下架，失效的会自动从页面上隐藏。';
@@ -1122,7 +1141,7 @@ function renderAbout() {
     ? '动手任务都在家里完成，不依赖 Google、python.org 或 Scratch 编辑器，这些网站在国内常常打不开，对一年级也太难。实验和折纸请家长陪着；不要模仿刀、锯和火，也不要把水或水果弄到电器上。'
     : '动手任务里的 Quick, Draw!、Teachable Machine、TensorFlow Playground 是 Google 的网站，Python 在线壳是 python.org 的页面，有的网络打不开。分类浏览里的 Scratch 入门在麻省理工的网站上练习，同样可能打不开。';
   $('#about-log').textContent = g1
-    ? '2026-11-15 按小学一年级（大约 6～7 岁）重排：路线改成 6 关「从好奇到会看」。小学清单并进这个站之后，原来的一年级网址以后应跳到 ?track=g1。本站是改编版，不是原作者站点。'
+    ? '2026-11-15 按大约 6～7 岁排了 6 关「从好奇到会看」。这门课在本站里。原来的一年级网址以后可以转到 ?track=g1。本站是改编版，不是原作者站点。'
     : '2026-11-15 按初中（初一到初三）重排成长路线：补上初中物理关，编程主路改为 Python，把神经网络和 GPT 关标成「学过函数 / 先会 Python 再看更顺」。本站是改编版，不是原作者站点。原项目更新记录：2026-11-08 整理频道与代表作；11-09 按小升初筛选；11-10 加入成长路线和频道榜；11-12 原版路线重排成 9 关并加入动手任务。';
 }
 
@@ -1765,12 +1784,13 @@ document.title = BP.pageTitle;
 {
   const meta = document.querySelector('meta[name="description"]');
   if (meta) meta.setAttribute('content', BP.track === 'g1'
-    ? 'BiliPicks — 家长给小学一年级孩子手选的 B 站视频：从好奇到会看的 6 关小路线，故事、小动物、博物馆和简单科学，无推荐算法。'
-    : 'BiliPicks — 家长给初中孩子手选的 B 站视频：从好奇到机器学习的 9 关闯关路线、B 站频道榜、AI 入门课，无推荐算法。');
+    ? 'BiliPicks — 从好奇到会看：给大约 6～7 岁的 6 关小课，故事、小动物、博物馆和简单科学，无推荐算法。'
+    : 'BiliPicks — 初中生学 AI：从好奇到机器学习的 9 关，家长手选，没有推荐算法。');
 }
 $('#btn-track').hidden = false;
-$('#btn-track').textContent = BP.label;
-$$('#track-menu button').forEach(b => b.classList.toggle('on', b.dataset.track === BP.track));
+$('#btn-track').textContent = BP.label || '选课';
+$('#btn-track').setAttribute('aria-label', '当前课程：' + (BP.label || '未选'));
+renderTrackMenu();
 $('#logo').href = './?track=' + BP.track;
 applyTheme();
 paintAccountBtn();
@@ -1816,41 +1836,82 @@ function paintAccountBtn() {
     b.setAttribute('aria-label', '登录');
   }
 }
+function courseById(id) {
+  return (window.BP.catalog || []).find(c => c.id === id) || null;
+}
+function courseNames(ids) {
+  return (ids || []).map(id => { const c = courseById(id); return c ? c.title : id; }).join('、');
+}
+function courseChecks(selected) {
+  const set = new Set(selected || []);
+  return (window.BP.catalog || []).map(c =>
+    `<label class="checkline"><input type="checkbox" name="course" value="${esc(c.id)}" ${set.has(c.id) ? 'checked' : ''}>${esc(c.title)}<small>${esc(c.ages)}</small></label>`
+  ).join('');
+}
+function renderTrackMenu() {
+  const bp = window.BP;
+  const box = $('#track-menu-list');
+  if (!box || !bp) return;
+  box.innerHTML = (bp.catalog || []).map(c =>
+    `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(c.title)}</b><small>${esc(c.ages)}</small></button>`
+  ).join('');
+}
+function renderGate() {
+  const bp = window.BP;
+  const box = $('#gate-choices');
+  if (!box || !bp) return;
+  const pick = bp.needsProfile ? (bp.suggestedTrack || '') : '';
+  box.innerHTML = (bp.catalog || []).map(c =>
+    `<button type="button" class="choice${pick && c.id === pick ? ' on' : ''}" data-track="${esc(c.id)}" aria-pressed="${pick && c.id === pick ? 'true' : 'false'}"><b>${esc(c.title)}</b><span>${esc(c.ages)}</span><small>${esc(c.blurb)}</small></button>`
+  ).join('');
+  const go = $('#gate-go');
+  if (go) go.hidden = !bp.needsProfile;
+}
 function showGate() {
   const bp = window.BP;
   document.body.classList.add('ready', 'picking');
   $('#boot-cover').hidden = true;
   $('#gate').hidden = false;
+  $('#gate-name-field').hidden = !bp.needsProfile;
   if (bp.needsProfile) {
-    $('#gate-name-field').hidden = false;
-    $('#gate h1').textContent = '给孩子建一个档案';
-    $('.gate-lead').textContent = '一个家长账号可以有几个孩子。这里只写家里的称呼，不写姓名、学校、电话或生日。';
+    $('#gate h1').textContent = '给孩子选课';
+    $('.gate-lead').textContent = '写一个家里的称呼，再选一门或多门课。不写姓名、学校、电话或生日。换课不会清掉已经看过的进度。';
   }
-  if (bp.suggestedTrack) $$('#gate .choice').forEach(el => el.classList.toggle('on', el.dataset.track === bp.suggestedTrack));
+  renderGate();
   paintAccountBtn();
 }
 function chooseTrack(track) {
   const bp = window.BP;
   const err = $('#gate-err');
   err.hidden = true;
-  if (bp.needsProfile) {
-    bp.createProfile($('#gate-name').value, track).then(res => {
-      if (!res.ok) { err.hidden = false; err.textContent = res.error; return; }
-      bp.setTrack(track);
-    });
-    return;
-  }
-  bp.setTrack(track);
+  const job = bp.setTrack(track);
+  if (job && job.then) job.then(res => {
+    if (!res || !res.ok) { err.hidden = false; err.textContent = (res && res.error) || '没有打开这门课。'; }
+  });
+}
+function startChosenCourses() {
+  const bp = window.BP;
+  const err = $('#gate-err');
+  const ids = $$('#gate .choice.on').map(el => el.dataset.track);
+  err.hidden = true;
+  if (!ids.length) { err.hidden = false; err.textContent = '先选一门课。可以多选。'; return; }
+  bp.createProfile($('#gate-name').value, ids[0], ids).then(res => {
+    if (!res.ok) { err.hidden = false; err.textContent = res.error; return; }
+    bp.needsProfile = false;
+    return bp.setTrack(ids[0]);
+  }).then(res => {
+    if (res && !res.ok) { err.hidden = false; err.textContent = res.error || '没有打开这门课。'; }
+  });
 }
 function closeAccount() { $('#account-sheet').hidden = true; }
 function accountCard(html) { $('#account-body').innerHTML = html; }
 function renderAccount() {
   const bp = window.BP;
-  const note = '<p class="note">不满 14 周岁的孩子，请由家长或监护人注册并管理这个账号（个人信息保护法）。我们只保存监护人邮箱和孩子的称呼，不收集姓名、学校、电话或出生日期。</p>';
+  const note = '不满 14 周岁的孩子，请由家长或监护人注册并管理这个账号（个人信息保护法）。这里只保存监护人邮箱和家里的称呼，不收集姓名、学校、电话或出生日期。';
   $('#account-sub').textContent = '';
   if (!bp.configured) {
     $('#account-title').textContent = '云端登录';
-    accountCard(`<p>云端登录还没配置。公开的 GitHub Pages 使用仓库里的 <b>config.public.js</b>（anon 公钥，数据由行级安全保护）。本机的 <b>config.js</b> 可以覆盖它。两份现在都不可用，可以继续用访客模式。</p><p class="note">进度只存在这台设备上。小学和初中各记各的。</p>`);
+    accountCard(`<p>云端登录还没配置。公开的 GitHub Pages 使用仓库里的 <b>config.public.js</b>（anon 公钥，数据由行级安全保护）。本机的 <b>config.js</b> 可以覆盖它。两份现在都不可用，可以继续用访客模式。</p><p class="quiet">进度只存在这台设备上。每门课各记各的。</p>`);
     return;
   }
   if (bp.offline) {
@@ -1859,27 +1920,67 @@ function renderAccount() {
     return;
   }
   if (bp.mode === 'cloud' && bp.user) {
-    $('#account-title').textContent = bp.profile ? bp.profile.display_name : '建档';
+    $('#account-title').textContent = '孩子档案';
     $('#account-sub').textContent = bp.user.email || '';
-    const list = bp.profiles.map(p => `<button type="button" class="btn" data-profile="${esc(p.id)}" style="width:100%;margin-top:8px;justify-content:space-between">${esc(p.display_name)}<span class="tag">${p.track === 'g1' ? '小学' : '初中'}</span></button>`).join('');
-    accountCard(`${bp.needsProfile ? '<p>这个账号还没有孩子档案。写一个家里的称呼，再选小学或初中。</p>' : '<p class="note">点一个称呼就换成那个孩子。两边的进度都还在。</p>'}
-      <div id="profile-list">${list}</div>
-      <form id="profile-form">
-        <label class="field"><span>添加孩子</span><input name="name" maxlength="24" placeholder="家里的称呼，不是姓名" required></label>
-        <label class="field"><span>这条路线</span><select name="track"><option value="g1">小学</option><option value="jh" ${bp.track === 'jh' || bp.suggestedTrack === 'jh' ? 'selected' : ''}>初中</option></select></label>
+    const list = bp.profiles.map(p => {
+      const ids = (p.courses && p.courses.length) ? p.courses : (p.track ? [p.track] : []);
+      const current = bp.profile && bp.profile.id === p.id;
+      const mark = esc(String(p.display_name || '孩').slice(0, 1));
+      return `<li><button type="button" class="kid${current ? ' on' : ''}" data-profile="${esc(p.id)}" aria-current="${current ? 'true' : 'false'}"><span class="kid-mark" aria-hidden="true">${mark}</span><span class="kid-main"><b>${esc(p.display_name)}</b><small>${esc(courseNames(ids) || '还没选课')}</small></span>${current ? '<span class="kid-now">当前</span>' : ''}</button></li>`;
+    }).join('');
+    const preset = bp.track ? [bp.track] : (bp.suggestedTrack ? [bp.suggestedTrack] : []);
+    const editing = bp.profile ? ((bp.profile.courses && bp.profile.courses.length) ? bp.profile.courses : (bp.profile.track ? [bp.profile.track] : [])) : [];
+    const hasKids = bp.profiles.length > 0;
+    accountCard(`${bp.needsProfile ? '<p class="quiet">先添一个孩子。只写家里的称呼，不写姓名、学校、电话或生日。</p>' : '<p class="quiet">点一个称呼就换成那个孩子。各门课的进度都留着。</p>'}
+      <ul class="kids" id="profile-list">${list}</ul>
+      ${bp.profile ? `<details class="kid-courses"><summary>调整「${esc(bp.profile.display_name)}」的课</summary><div id="course-edit">${courseChecks(editing)}</div><button type="button" class="btn sm" id="courses-save">保存</button><p class="quiet">取消勾选不会清掉已经看过的进度。</p></details>` : ''}
+      <button type="button" class="text-add" id="add-child-toggle" ${hasKids ? '' : 'hidden'}>添加孩子</button>
+      <form id="profile-form" class="add-box" ${hasKids ? 'hidden' : ''}>
+        <label class="field"><span>家里的称呼</span><input name="name" maxlength="24" placeholder="比如姐姐、弟弟。不是姓名" required></label>
+        <div class="field"><span>选课，可多选</span>${courseChecks(preset)}</div>
         <button class="btn primary" type="submit">保存这个孩子</button>
+        <p class="quiet">只写称呼，不写姓名、学校、电话或生日。</p>
       </form>
-      ${bp.profile ? `<button type="button" class="btn" id="profile-delete" style="margin-top:10px">删除「${esc(bp.profile.display_name)}」的档案</button>` : ''}
-      <button type="button" class="btn" id="account-out" style="margin-top:10px">退出登录</button>
-      ${note}
+      <div class="sheet-foot">
+        ${bp.profile ? `<button type="button" class="text-danger" id="profile-delete">删除「${esc(bp.profile.display_name)}」的档案</button>` : ''}
+        <button type="button" class="text-quiet" id="account-out">退出登录</button>
+      </div>
       <p class="err" id="account-err" hidden></p>`);
-    $$('#profile-list [data-profile]').forEach(btn => btn.onclick = () => bp.selectProfile(btn.dataset.profile));
+    $$('#profile-list [data-profile]').forEach(btn => btn.onclick = () => {
+      if (bp.profile && btn.dataset.profile === bp.profile.id) return;
+      bp.selectProfile(btn.dataset.profile);
+    });
+    const addToggle = $('#add-child-toggle');
+    if (addToggle) addToggle.onclick = () => {
+      const form = $('#profile-form');
+      form.hidden = false;
+      addToggle.hidden = true;
+      const input = form.querySelector('[name=name]');
+      if (input) input.focus();
+    };
+    const saveCourses = $('#courses-save');
+    if (saveCourses) saveCourses.onclick = () => {
+      const ids = [...$$('#course-edit input:checked')].map(el => el.value);
+      const er = $('#account-err');
+      er.hidden = true;
+      bp.setCourses(ids).then(res => {
+        if (!res || !res.ok) { er.hidden = false; er.textContent = (res && res.error) || '没有保存。'; return; }
+        if (res.track === bp.track) renderAccount();
+      });
+    };
     $('#profile-form').onsubmit = e => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      bp.createProfile(fd.get('name'), fd.get('track')).then(res => {
-        if (!res.ok) { const er = $('#account-err'); er.hidden = false; er.textContent = res.error; return; }
-        bp.setTrack(fd.get('track'));
+      const ids = fd.getAll('course');
+      const er = $('#account-err');
+      er.hidden = true;
+      if (!ids.length) { er.hidden = false; er.textContent = '先选一门课。可以多选。'; return; }
+      bp.createProfile(fd.get('name'), ids[0], ids).then(res => {
+        if (!res.ok) { er.hidden = false; er.textContent = res.error; return; }
+        bp.needsProfile = false;
+        return bp.setTrack(ids[0]);
+      }).then(res => {
+        if (res && !res.ok) { er.hidden = false; er.textContent = res.error || '没有打开这门课。'; }
       });
     };
     const del = $('#profile-delete');
@@ -1890,8 +1991,7 @@ function renderAccount() {
     return;
   }
   $('#account-title').textContent = '家长登录';
-  accountCard(`<p class="note">一个账号通常是家长或监护人的邮箱，下面可以有几个孩子。</p>
-    ${note}
+  accountCard(`<p class="quiet">一个邮箱下面可以有几个孩子，进度按孩子、按课分开。</p>
     <form id="auth-form">
       <label class="field"><span>邮箱</span><input name="email" type="email" autocomplete="username" required></label>
       <label class="field"><span>密码</span><input name="password" type="password" autocomplete="current-password" minlength="6" required></label>
@@ -1901,7 +2001,8 @@ function renderAccount() {
       </div>
     </form>
     <p class="err" id="account-err" hidden></p>
-    <p class="note" id="auth-hint" hidden></p>`);
+    <p class="quiet" id="auth-hint" hidden></p>
+    <p class="pipl">${note}</p>`);
   let registering = false;
   $('#auth-mode').onclick = () => {
     registering = !registering;
@@ -1931,7 +2032,7 @@ function renderAccount() {
         showGate();
         return;
       }
-      const track = (res.profile && res.profile.track) || bp.track || 'jh';
+      const track = (res.profile && (courseById(res.profile.track) ? res.profile.track : (res.profile.courses || []).find(id => courseById(id)))) || bp.track || 'jh';
       bp.setTrack(track);
     });
   };
@@ -1941,12 +2042,12 @@ function maybeShowMerge() {
   const plan = bp.mergePlan();
   if (!plan) return;
   const options = plan.profiles.map(p => `<option value="${esc(p.id)}">${esc(p.display_name)}</option>`).join('');
-  let html = '';
-  if (plan.g1) html += `<label class="field"><span>小学，这台设备有 ${plan.g1} 条记录</span><select id="merge-g1">${options}<option value="">不合并</option></select></label>`;
-  if (plan.jh) html += `<label class="field"><span>初中，这台设备有 ${plan.jh} 条记录</span><select id="merge-jh">${options}<option value="">不合并</option></select></label>`;
-  $('#merge-fields').innerHTML = html;
-  ['g1', 'jh'].forEach(id => { const sel = $('#merge-' + id); if (sel) sel.value = plan.profileId; });
-  $('#merge-lead').textContent = '登录前记在这台设备上的进度，可以并进某个孩子的档案。云端已经有的记录会保留，不会被清掉。小学和初中可以交给不同的孩子。';
+  const rows = plan.courses || [];
+  $('#merge-fields').innerHTML = rows.map(c =>
+    `<label class="field"><span>${esc(c.title)}，这台设备有 ${c.count} 条记录</span><select id="merge-${esc(c.id)}">${options}<option value="">不合并</option></select></label>`
+  ).join('');
+  rows.forEach(c => { const sel = $('#merge-' + c.id); if (sel) sel.value = plan.profileId; });
+  $('#merge-lead').textContent = '登录前记在这台设备上的进度，可以并进某个孩子的档案。云端已经有的记录会保留，不会被清掉。不同的课可以交给不同的孩子。';
   $('#merge-err').hidden = true;
   $('#merge-modal').hidden = false;
 }
@@ -1954,22 +2055,41 @@ $('#btn-account').onclick = () => { $('#account-sheet').hidden = false; renderAc
 $('#account-sheet').addEventListener('click', e => { if (e.target.closest('[data-close-account]')) closeAccount(); });
 $('#gate').addEventListener('click', e => {
   const b = e.target.closest('[data-track]');
-  if (b) chooseTrack(b.dataset.track);
+  if (!b || !window.BP) return;
+  if (window.BP.needsProfile) {
+    b.classList.toggle('on');
+    b.setAttribute('aria-pressed', b.classList.contains('on') ? 'true' : 'false');
+    return;
+  }
+  chooseTrack(b.dataset.track);
+});
+$('#gate-go').onclick = () => startChosenCourses();
+const gateName = $('#gate-name');
+if (gateName) gateName.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); startChosenCourses(); }
 });
 $('#gate-login').onclick = () => { $('#account-sheet').hidden = false; renderAccount(); };
 $('#btn-track').onclick = e => { e.stopPropagation(); $('#track-menu').hidden = !$('#track-menu').hidden; };
 $('#track-menu').addEventListener('click', e => {
   const b = e.target.closest('[data-track]');
   if (!b || !window.BP) return;
-  window.BP.setTrack(b.dataset.track);
+  const job = window.BP.setTrack(b.dataset.track);
+  if (job && job.then) job.then(res => {
+    if (!res || res.ok) return;
+    const t = $('#toast');
+    if (!t) return;
+    t.textContent = res.error || '没有换成这门课';
+    t.classList.add('show');
+  });
 });
 document.addEventListener('click', e => { if (!e.target.closest('.track-wrap')) $('#track-menu').hidden = true; });
 $('#merge-skip').onclick = () => { window.BP.dismissMerge(); $('#merge-modal').hidden = true; };
 $('#merge-go').onclick = () => {
-  const choices = {
-    g1: $('#merge-g1') ? $('#merge-g1').value : '',
-    jh: $('#merge-jh') ? $('#merge-jh').value : ''
-  };
+  const choices = {};
+  (window.BP.catalog || []).forEach(c => {
+    const sel = $('#merge-' + c.id);
+    if (sel) choices[c.id] = sel.value;
+  });
   window.BP.mergeGuest(choices).then(res => {
     const er = $('#merge-err');
     if (!res.ok) { er.hidden = false; er.textContent = res.error || '没有合并成功'; return; }
