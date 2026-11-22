@@ -87,7 +87,7 @@ Supabase 的接口在海外，有的大陆网络会慢，或者打不开。打�
 - 本机的 nginx 把浏览器请求的 `/proxy/` 转到 `127.0.0.1:8788` 上的媒体代理。页面会访问 `/proxy/play`、`/proxy/cover` 和 `/proxy/view`。代理只给家里用，局域网主机名不要接到 Cloudflare，也不要发布到公网。
 - 打开一门课之后会请求 `/proxy/play?bvid=&p=1`，最多等大约 2 秒。响应的 `Content-Type` 是 JSON，才进入本地播放。普通静态服务器返回 HTML，继续用官方嵌入播放器。代理应在本机直接拒绝空的 `bvid`（返回 JSON 即可），不要为了这次探测去拉视频流。
 - Safari（包括 iPhone）能自己播 HLS，就直接把地址交给 `<video>`。其他浏览器这时才加载 `vendor/hls.min.js`。这是官方 [hls.js](https://github.com/video-dev/hls.js) 1.7.4 的 UMD 构建（`dist/hls.min.js`，Apache-2.0，许可见 `vendor/hls.LICENSE`）。公开站点不下载这个文件。
-- 手机上点「投屏」：先请求整个页面全屏（页面、然后 `body`、然后播放区）。都失败时（iPhone 上常见）再调用视频的 `webkitEnterFullscreen`。`<video>` 带 `x-webkit-airplay="allow"`。先点一下画面开始播放，把手机横过来，再用系统的「屏幕镜像」，不要选「只投这个视频」。电脑上的「大屏模式」仍然不会强行进入浏览器全屏。
+- 手机上点「投屏」：先请求整个页面全屏（页面、然后 `body`、然后播放区）。都失败时（iPhone 上常见）再调用视频的 `webkitEnterFullscreen`。`<video>` 带 `x-webkit-airplay="allow"`。先点一下画面开始播放，把手机横过来，再用控制中心的「屏幕镜像」。不要用视频右下角的隔空播放或「只投这个视频」：那样电视通常只有声音，没有画面。电脑上的「大屏模式」仍然不会强行进入浏览器全屏。
 - 代理的令牌和口令留在树莓派上，不要放进这个仓库，也不要写进 nginx 配置后提交。
 
 路径前缀要和代理进程一致。下面只说明形状，不是那台机器上的完整配置：
