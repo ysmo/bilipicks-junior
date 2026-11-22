@@ -85,10 +85,15 @@ h1,h2,h3,p{margin:0}
 .phint{margin-top:.8rem;color:#c3cede;font-size:.9rem}
 .tv-input{display:block;width:100%;margin:0 0 .7rem;padding:.75rem .9rem;border:0;border-radius:.6rem;background:#0e1626;color:#fff;font:inherit}
 .pick{position:fixed;top:0;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#0b1220}
-.pick h1{font-size:2rem;font-weight:800;margin-bottom:.6rem;text-align:center}
-.pick-lead{text-align:center;color:#93a3bb;font-size:1rem;margin:0 0 1.2rem}
-.pick-row{width:70rem;display:flex;flex-wrap:wrap;justify-content:center}
-.pick-row .tile{width:20rem;height:12rem;margin:.7rem}
+.pick h1{font-size:1.7rem;font-weight:800;margin-bottom:.4rem;text-align:center}
+.pick-lead{text-align:center;color:#93a3bb;font-size:.95rem;margin:0 0 .9rem}
+.pick-metro{width:70rem;display:flex;flex-wrap:wrap;justify-content:center}
+.pick-stage{width:22rem;margin:0 .4rem .4rem;text-align:center}
+.pick-stage h2{margin:0;font-size:1.05rem;font-weight:800;color:#eef3fb}
+.pick-stage h2 span{color:#93a3bb;font-weight:700;font-size:.9rem}
+.pick-stage .lede{margin:.2rem 0 0;color:#8d9bb1;font-size:.82rem;line-height:1.45}
+.pick-row{display:block}
+.pick-row .tile{display:block;width:20rem;height:9.2rem;margin:.55rem auto 0}
 
 /* 一排一排的视频方块 */
 .row{position:relative;height:14.4rem;margin:-.7rem -3.5rem 0;overflow:hidden} /* 伸到屏幕两边再裁：右边露半块提示还有，焦点放大也不被切 */
@@ -773,15 +778,36 @@ function focusVideo(v) {
 var picking = false;
 var pickFromSettings = false;
 function paintPick() {
-  var list = (window.BiliPicksAccount && window.BiliPicksAccount.courseList()) || [];
+  var acc = window.BiliPicksAccount;
+  var list = (acc && acc.courseList()) || [];
+  var stages = (acc && acc.STAGES) || [];
   var current = window.BP && window.BP.track;
   var html = '';
   var focused = false;
-  list.forEach(function (c) {
+  var known = {};
+  var leftover = [];
+  function tileHtml(c) {
     var on = c.id === current;
     if (on) focused = true;
-    html += '<div class="tile stage' + (on ? ' f' : '') + '" data-track="' + c.id + '" style="--h:' + c.color + ';--h2:' + c.color2 + '"><span class="no">' + esc(c.ages) + '</span><div class="ic">' + c.icon + '</div><div class="nm">' + esc(c.title) + '</div></div>';
+    return '<div class="tile stage' + (on ? ' f' : '') + '" data-track="' + c.id + '" style="--h:' + c.color + ';--h2:' + c.color2 + '"><span class="no">' + esc(c.ages) + '</span><div class="ic">' + c.icon + '</div><div class="nm">' + esc(c.title) + '</div></div>';
+  }
+  stages.forEach(function (st) {
+    known[st.id] = true;
+    var items = list.filter(function (c) { return c.stage === st.id; });
+    if (!items.length) return;
+    html += '<div class="pick-stage">';
+    html += '<h2>' + esc(st.title) + ' <span>' + esc(st.ages) + '</span></h2>';
+    if (st.lede) html += '<p class="lede">' + esc(st.lede) + '</p>';
+    html += '<div class="pick-row">';
+    items.forEach(function (c) { html += tileHtml(c); });
+    html += '</div></div>';
   });
+  leftover = list.filter(function (c) { return !known[c.stage]; });
+  if (leftover.length) {
+    html += '<div class="pick-row">';
+    leftover.forEach(function (c) { html += tileHtml(c); });
+    html += '</div>';
+  }
   $('#pick-metro').innerHTML = html;
   if (!focused) {
     var first = $('#pick-metro .tile');
@@ -796,7 +822,7 @@ function showPick(fromSettings) {
   $('#pick').hidden = false;
 }
 function pickKey(k) {
-  var tiles = [].slice.call($('#pick-metro').children);
+  var tiles = [].slice.call($('#pick-metro').querySelectorAll('.tile'));
   var i = 0;
   tiles.forEach(function (el, idx) { if (el.classList.contains('f')) i = idx; });
   if (k === 'left' || k === 'up' || k === 'right' || k === 'down') {

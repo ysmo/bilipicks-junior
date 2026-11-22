@@ -88,6 +88,9 @@ assert(html.indexOf('查找称呼') >= 0 && html.indexOf('>新增<') >= 0, 'mana
 assert(html.indexOf('学习记录') >= 0 && html.indexOf('id="delete-confirm"') >= 0, 'records and confirmed delete live in management');
 assert(html.split('个人信息保护法').length === 2, 'the under-14 note stays on the login form only');
 assert(html.indexOf('id="gate-choices"') >= 0, 'the first screen still lists courses');
+assert(html.indexOf('课程中心') >= 0, 'the first screen is the course center');
+assert(html.indexOf('正在准备') >= 0, 'upcoming courses are marked as being prepared');
+assert(html.indexOf('class="choice soon"') >= 0 || html.indexOf("soon ? ' soon'") >= 0 || html.indexOf("soon ? ' soon' : ''") >= 0, 'upcoming cards use the soon style');
 assert(html.indexOf('github.io') >= 0 && html.indexOf("location.protocol === 'file:'") >= 0, 'lan probe still skips github.io and file');
 
 assert(tv.indexOf('deleteProfile') < 0 && tv.indexOf('setCourses') < 0 && tv.indexOf('调整') < 0, 'tv settings do not adjust courses or delete a profile');

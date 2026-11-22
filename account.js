@@ -6,13 +6,16 @@
    只使用 anon 公钥。换一个 Supabase 项目，或换成同一套 Auth / REST 的服务时，改配置文件即可。
    电视版会加载这个文件，所以不用 ?. 、?? 这些较新的语法。
 
-   再加一门课：在 COURSES 里加一项（id、标题、清单文件、localStorage 前缀）。
+   再加一门能上的课：在 COURSES 里加一项（id、标题、清单文件、localStorage 前缀、
+   所属阶段 stage：early / primary / junior），再准备一份和 data.js 一样的清单。
    进度按课程 id 分开存放。旧键要接着用的话，把 legacyPrefix 设成原来的前缀，
-   打开页面时会拷到新前缀，不会删掉旧键。 */
+   打开页面时会拷到新前缀，不会删掉旧键。
+   还在准备、还不能看的课放在 UPCOMING，不要进 COURSES，也不要建空的清单文件。 */
 (function (global) {
   var COURSES = {
     g1: {
       id: 'g1',
+      stage: 'primary',
       title: '从好奇到会看',
       ages: '大约 6～7 岁',
       blurb: '故事、小动物、博物馆，和简单的「为什么」。6 关，现在就能看。',
@@ -26,6 +29,7 @@
     },
     jh: {
       id: 'jh',
+      stage: 'junior',
       title: '初中生学 AI',
       ages: '大约 12～15 岁',
       blurb: '从好奇走到机器学习。9 关；学过函数再看后面几关更顺。',
@@ -39,6 +43,7 @@
     },
     y2: {
       id: 'y2',
+      stage: 'early',
       title: '两岁看世界',
       ages: '大约 2 岁',
       blurb: '熊猫、动物宝宝、小鸟，还有花、雨和雪。5 关共 31 条短片，请家长陪着，看完一条就停。',
@@ -51,6 +56,56 @@
     }
   };
   var COURSE_ORDER = ['y2', 'g1', 'jh'];
+  var STAGES = [
+    {
+      id: 'early',
+      title: '幼儿',
+      ages: '大约 2～5 岁',
+      lede: '请家长陪坐。每次只看一条，看完去做一件真事。',
+      color: '#e8943a',
+      color2: '#b86a1d'
+    },
+    {
+      id: 'primary',
+      title: '小学',
+      ages: '大约 6～11 岁',
+      lede: '从故事和身边的事物，慢慢走到「为什么会这样」。',
+      color: '#2fa866',
+      color2: '#1d7446'
+    },
+    {
+      id: 'junior',
+      title: '初中',
+      ages: '大约 12～15 岁',
+      lede: '把好奇留住，再走到机器学习和把想法做成东西。',
+      color: '#2f86e0',
+      color2: '#1d5ea8'
+    }
+  ];
+  var UPCOMING = [
+    {
+      id: 'snd',
+      stage: 'early',
+      title: '听，世界在响',
+      ages: '大约 3～5 岁',
+      blurb: '雨、鸟、虫鸣，还有厨房里的声音。请家长陪着，听完一条就去找那种声音。',
+      icon: '🎧',
+      color: '#d9844a',
+      color2: '#a85a28',
+      badge: '正在准备'
+    },
+    {
+      id: 'why',
+      stage: 'primary',
+      title: '问个为什么',
+      ages: '大约 8～11 岁',
+      blurb: '光、水、磁铁，和博物馆里的旧东西。看完可以在家里试一个小实验。',
+      icon: '🧪',
+      color: '#3aa37a',
+      color2: '#1c6e52',
+      badge: '正在准备'
+    }
+  ];
   var GUEST_SUFFIXES = ['done-v1', 'missions-v1', 'theme', 'autoplay', 'covers-v1', 'pos-v1'];
   var TRACK_KEY = 'bilipicks-track';
   var AUTH_KEY = 'bilipicks-auth-v1';
@@ -101,7 +156,8 @@
       blurb: c.blurb,
       icon: c.icon,
       color: c.color,
-      color2: c.color2
+      color2: c.color2,
+      stage: c.stage
     };
   }
   function courseList() {
@@ -1359,6 +1415,8 @@
     learningRecord: learningRecord,
     migrateGuestStorage: migrateGuestStorage,
     COURSES: COURSES,
-    TRACKS: COURSES
+    TRACKS: COURSES,
+    STAGES: STAGES,
+    UPCOMING: UPCOMING
   };
 })(typeof window !== 'undefined' ? window : this);

@@ -457,17 +457,29 @@ body.picking main,body.picking .tabs,body.picking .nav,body.picking .search,body
 .pop button:hover,.pop button.on{background:var(--soft)}
 .pop p{color:var(--muted);font-size:12.5px;line-height:1.5;padding:4px 8px 6px}
 .gate{position:fixed;inset:0;z-index:65;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;background:var(--bg);overflow:auto}
-.gate-card{width:min(760px,100%);margin:auto}
+.gate-card{width:min(880px,100%);margin:auto}
 .gate h1{font-size:clamp(28px,5vw,40px);font-weight:800;letter-spacing:-.4px;line-height:1.2;margin:8px 0 8px}
 .gate-lead,.note{color:var(--muted);line-height:1.7}
+.stage-block{margin-top:22px}
+.stage-block h2{margin:0;font-size:18px;font-weight:800;letter-spacing:-.2px;line-height:1.3;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 8px}
+.stage-block h2::before{content:"";width:8px;height:8px;border-radius:99px;background:var(--h,var(--accent));flex:none;position:relative;top:-1px}
+.stage-block h2 span{color:var(--muted);font-size:14px;font-weight:700}
+.stage-lede{margin:6px 0 0;color:var(--muted);font-size:14.5px;line-height:1.65;font-weight:600}
+.stage-block .choices{margin-top:12px}
 .choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:16px}
-.choice{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);min-height:148px}
+.choice{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:18px;border-radius:20px;background:var(--surface);border:1px solid var(--line);border-left-width:4px;border-left-color:var(--h,var(--line));box-shadow:var(--shadow);min-height:148px}
 .choice.on b::before{content:"✓ ";color:var(--accent)}
+.choice-ico{font-size:22px;line-height:1;margin-bottom:2px}
 .choice b{font-size:22px;font-weight:800}
 .choice span{font-weight:800}
 .choice small{color:var(--muted);font-weight:600;line-height:1.5}
-.choice.on,.choice:hover{border-color:var(--accent)}
+.choice.on,.choice:hover{border-color:var(--accent);border-left-color:var(--h,var(--accent))}
+.choice.soon{border-style:dashed;box-shadow:none;opacity:.96}
+.choice.soon:hover,.choice.soon:focus{border-color:var(--line);border-left-color:var(--h,var(--line))}
+.choice .badge{position:absolute;top:12px;right:12px;padding:2px 8px;border-radius:999px;background:color-mix(in oklab,var(--h,#b86a1d) 16%,var(--surface));color:var(--h2,#b86a1d);font-size:11px;font-weight:800;font-style:normal}
 .gate-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.gate-foot{margin-top:22px;color:var(--muted);font-size:13px;line-height:1.65;font-weight:600}
+.pop .track-stage{margin:10px 8px 2px;padding:0;font-size:11.5px;font-weight:800;letter-spacing:.02em}
 .field{display:flex;flex-direction:column;gap:6px;margin:12px 0}
 .field span{font-weight:800;font-size:14px}
 .field input,.field select{width:100%;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px}
@@ -587,8 +599,8 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
 <div class="gate" id="gate" hidden>
   <div class="gate-card">
     <a class="logo" href="./" aria-label="BiliPicks"><span class="mark">▶</span><span>BiliPicks</span></a>
-    <h1>给孩子选一门课</h1>
-    <p class="gate-lead">这是一个网站，里面有很多门课。家长替孩子挑，比如「初中生学 AI」。以后还可以再加课，每门课的进度分开留着。</p>
+    <h1>课程中心</h1>
+    <p class="gate-lead">按孩子现在的年纪挑一门课。家长看着选；每门课的进度分开留着。</p>
     <div class="field" id="gate-name-field" hidden>
       <span>这个孩子在家里怎么叫</span>
       <input id="gate-name" maxlength="24" autocomplete="off" placeholder="比如：姐姐、弟弟。不是姓名">
@@ -599,6 +611,7 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
       <button type="button" class="btn primary" id="gate-go" hidden>用这些课开始</button>
       <button type="button" class="btn" id="gate-login">家长登录 / 注册</button>
     </div>
+    <p class="gate-foot">两岁前除了视频通话，宜尽量少看屏幕。任何年纪都请家长一起挑、一起看。</p>
   </div>
 </div>
 
@@ -922,12 +935,12 @@ function embedUrl(v, autoplay) {
   return `https://player.bilibili.com/player.html?bvid=${encodeURIComponent(v.id)}${p}&high_quality=1&danmaku=0&danmakuClosed=true&autoplay=${autoplay ? 'true' : 'false'}&as_wide=1`;
 }
 let toastTimer;
-function toast(msg) {
+function toast(msg, ms) {
   const t = $('#toast');
   t.textContent = msg;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+  toastTimer = setTimeout(() => t.classList.remove('show'), ms || 2600);
 }
 
 // ---------- 深浅色 ----------
@@ -1880,22 +1893,76 @@ function courseById(id) {
 function courseNames(ids) {
   return (ids || []).map(id => { const c = courseById(id); return c ? c.title : id; }).join('、');
 }
+function stageList() {
+  return (window.BiliPicksAccount && BiliPicksAccount.STAGES) || [];
+}
+function upcomingCourses() {
+  return (window.BiliPicksAccount && BiliPicksAccount.UPCOMING) || [];
+}
+function choiceCard(c, selected, soon) {
+  const on = !soon && selected && c.id === selected;
+  const cls = 'choice' + (on ? ' on' : '') + (soon ? ' soon' : '');
+  const pressed = soon ? '' : ` aria-pressed="${on ? 'true' : 'false'}"`;
+  const soonAttr = soon ? ' data-soon="1" aria-disabled="true"' : '';
+  const badge = soon ? '<span class="badge">正在准备</span>' : '';
+  const style = c.color ? ` style="--h:${esc(c.color)};--h2:${esc(c.color2 || c.color)}"` : '';
+  const ico = c.icon ? `<span class="choice-ico" aria-hidden="true">${esc(c.icon)}</span>` : '';
+  return `<button type="button" class="${cls}" data-track="${esc(c.id)}"${soonAttr}${pressed}${style}>${badge}${ico}<b>${esc(c.title)}</b><span>${esc(c.ages)}</span><small>${esc(c.blurb)}</small></button>`;
+}
+function coursesForStage(stageId, includeUpcoming) {
+  const live = ((window.BP && window.BP.catalog) || []).filter(c => c.stage === stageId);
+  const soon = includeUpcoming ? upcomingCourses().filter(c => c.stage === stageId) : [];
+  return { live, soon };
+}
+function renderStageSections(opts) {
+  opts = opts || {};
+  const pick = opts.selected || '';
+  const known = {};
+  let html = '';
+  stageList().forEach(st => {
+    known[st.id] = true;
+    const pack = coursesForStage(st.id, !!opts.upcoming);
+    if (!pack.live.length && !pack.soon.length) return;
+    const hue = st.color ? ` style="--h:${esc(st.color)}"` : '';
+    html += `<section class="stage-block" data-stage="${esc(st.id)}"${hue}>`;
+    html += `<h2>${esc(st.title)} <span>${esc(st.ages)}</span></h2>`;
+    if (st.lede) html += `<p class="stage-lede">${esc(st.lede)}</p>`;
+    html += '<div class="choices">';
+    pack.live.forEach(c => { html += choiceCard(c, pick, false); });
+    pack.soon.forEach(c => { html += choiceCard(c, '', true); });
+    html += '</div></section>';
+  });
+  const leftover = ((window.BP && window.BP.catalog) || []).filter(c => !known[c.stage]);
+  leftover.forEach(c => { html += choiceCard(c, pick, false); });
+  return html;
+}
 function renderTrackMenu() {
   const bp = window.BP;
   const box = $('#track-menu-list');
   if (!box || !bp) return;
-  box.innerHTML = (bp.catalog || []).map(c =>
-    `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(c.title)}</b><small>${esc(c.ages)}</small></button>`
-  ).join('');
+  const catalog = bp.catalog || [];
+  const known = {};
+  let html = '';
+  stageList().forEach(st => {
+    known[st.id] = true;
+    const items = catalog.filter(c => c.stage === st.id);
+    if (!items.length) return;
+    html += `<p class="track-stage">${esc(st.title)} · ${esc(st.ages)}</p>`;
+    html += items.map(c =>
+      `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(c.title)}</b><small>${esc(c.ages)}</small></button>`
+    ).join('');
+  });
+  catalog.filter(c => !known[c.stage]).forEach(c => {
+    html += `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(c.title)}</b><small>${esc(c.ages)}</small></button>`;
+  });
+  box.innerHTML = html;
 }
 function renderGate() {
   const bp = window.BP;
   const box = $('#gate-choices');
   if (!box || !bp) return;
   const pick = bp.needsProfile ? (bp.suggestedTrack || '') : '';
-  box.innerHTML = (bp.catalog || []).map(c =>
-    `<button type="button" class="choice${pick && c.id === pick ? ' on' : ''}" data-track="${esc(c.id)}" aria-pressed="${pick && c.id === pick ? 'true' : 'false'}"><b>${esc(c.title)}</b><span>${esc(c.ages)}</span><small>${esc(c.blurb)}</small></button>`
-  ).join('');
+  box.innerHTML = renderStageSections({ selected: pick, upcoming: true });
   const go = $('#gate-go');
   if (go) go.hidden = !bp.needsProfile;
 }
@@ -1908,6 +1975,9 @@ function showGate() {
   if (bp.needsProfile) {
     $('#gate h1').textContent = '给孩子选课';
     $('.gate-lead').textContent = '写一个家里的称呼，再选一门或多门课。不写姓名、学校、电话或生日。换课不会清掉已经看过的进度。';
+  } else {
+    $('#gate h1').textContent = '课程中心';
+    $('.gate-lead').textContent = '按孩子现在的年纪挑一门课。家长看着选；每门课的进度分开留着。';
   }
   renderGate();
   paintAccountBtn();
@@ -2271,6 +2341,10 @@ $('#account-sheet').addEventListener('click', e => { if (e.target.closest('[data
 $('#gate').addEventListener('click', e => {
   const b = e.target.closest('[data-track]');
   if (!b || !window.BP) return;
+  if (b.classList.contains('soon') || b.dataset.soon) {
+    toast('这门课还在挑选视频，好了会放进课程中心。', 3600);
+    return;
+  }
   if (window.BP.needsProfile) {
     b.classList.toggle('on');
     b.setAttribute('aria-pressed', b.classList.contains('on') ? 'true' : 'false');
