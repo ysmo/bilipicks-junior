@@ -6,17 +6,24 @@
    只使用 anon 公钥。换一个 Supabase 项目，或换成同一套 Auth / REST 的服务时，改配置文件即可。
    电视版会加载这个文件，所以不用 ?. 、?? 这些较新的语法。
 
-   再加一门课：在 COURSES 里加一项（id、标题、清单文件、localStorage 前缀）。
+   再加一门能上的课：在 COURSES 里加一项（id、标题、清单文件、localStorage 前缀、
+   所属阶段 stage：early / primary / junior），再准备一份和 data.js 一样的清单。
    进度按课程 id 分开存放。旧键要接着用的话，把 legacyPrefix 设成原来的前缀，
-   打开页面时会拷到新前缀，不会删掉旧键。 */
+   打开页面时会拷到新前缀，不会删掉旧键。
+   还在准备、还不能看的课放在 UPCOMING，不要进 COURSES，也不要建空的清单文件。 */
 (function (global) {
   var COURSES = {
     g1: {
       id: 'g1',
+      stage: 'primary',
       title: '从好奇到会看',
+      titleEn: 'From Curiosity to Looking Closely',
       ages: '大约 6～7 岁',
+      agesEn: 'about 6–7',
       blurb: '故事、小动物、博物馆，和简单的「为什么」。6 关，现在就能看。',
+      blurbEn: 'Stories, little animals, museums, and simple “why” questions. Six stages, ready to watch now.',
       pageTitle: 'BiliPicks · 从好奇到会看',
+      pageTitleEn: 'BiliPicks · From Curiosity to Looking Closely',
       file: 'data-g1.js',
       prefix: 'bilipicks-g1',
       legacyPrefix: 'bilipicks-g1',
@@ -26,10 +33,15 @@
     },
     jh: {
       id: 'jh',
+      stage: 'junior',
       title: '初中生学 AI',
+      titleEn: 'AI for Middle School',
       ages: '大约 12～15 岁',
+      agesEn: 'about 12–15',
       blurb: '从好奇走到机器学习。9 关；学过函数再看后面几关更顺。',
+      blurbEn: 'From curiosity to machine learning. Nine stages; the later ones go more smoothly if you already know functions.',
       pageTitle: 'BiliPicks · 初中生学 AI',
+      pageTitleEn: 'BiliPicks · AI for Middle School',
       file: 'data.js',
       prefix: 'bilipicks-jh',
       legacyPrefix: 'bilipicks-jh',
@@ -39,10 +51,15 @@
     },
     y2: {
       id: 'y2',
+      stage: 'early',
       title: '两岁看世界',
+      titleEn: 'Seeing the World at Two',
       ages: '大约 2 岁',
+      agesEn: 'about age 2',
       blurb: '熊猫、动物宝宝、小鸟，还有花、雨和雪。5 关共 31 条短片，请家长陪着，看完一条就停。',
+      blurbEn: 'Pandas, baby animals, little birds, plus flowers, rain, and snow. Five stages, 31 short films. Sit with your child, and stop after each one.',
       pageTitle: 'BiliPicks · 两岁看世界',
+      pageTitleEn: 'BiliPicks · Seeing the World at Two',
       file: 'data-y2.js',
       prefix: 'bilipicks-y2',
       icon: '🐼',
@@ -51,7 +68,80 @@
     }
   };
   var COURSE_ORDER = ['y2', 'g1', 'jh'];
+  var STAGES = [
+    {
+      id: 'early',
+      title: '幼儿',
+      titleEn: 'Little ones',
+      ages: '大约 2～5 岁',
+      agesEn: 'about 2–5',
+      lede: '请家长陪坐。每次只看一条，看完去做一件真事。',
+      ledeEn: 'Sit with your child. Watch one short video, then go do something real.',
+      color: '#e8943a',
+      color2: '#b86a1d'
+    },
+    {
+      id: 'primary',
+      title: '小学',
+      titleEn: 'Primary school',
+      ages: '大约 6～11 岁',
+      agesEn: 'about 6–11',
+      lede: '从故事和身边的事物，慢慢走到「为什么会这样」。',
+      ledeEn: 'From stories and everyday things, toward “why does this happen?”',
+      color: '#2fa866',
+      color2: '#1d7446'
+    },
+    {
+      id: 'junior',
+      title: '初中',
+      titleEn: 'Middle school',
+      ages: '大约 12～15 岁',
+      agesEn: 'about 12–15',
+      lede: '把好奇留住，再走到机器学习和把想法做成东西。',
+      ledeEn: 'Keep the curiosity, then walk toward machine learning and making things.',
+      color: '#2f86e0',
+      color2: '#1d5ea8'
+    }
+  ];
+  var UPCOMING = [
+    {
+      id: 'snd',
+      stage: 'early',
+      title: '听，世界在响',
+      titleEn: 'Listen, the World Is Sounding',
+      ages: '大约 3～5 岁',
+      agesEn: 'about 3–5',
+      blurb: '雨、鸟、虫鸣，还有厨房里的声音。请家长陪着，听完一条就去找那种声音。',
+      blurbEn: 'Rain, birds, insects, and the sounds of the kitchen. Sit with your child, then go find that sound.',
+      icon: '🎧',
+      color: '#d9844a',
+      color2: '#a85a28',
+      badge: '正在准备'
+    },
+    {
+      id: 'why',
+      stage: 'primary',
+      title: '问个为什么',
+      titleEn: 'Ask Why',
+      ages: '大约 8～11 岁',
+      agesEn: 'about 8–11',
+      blurb: '光、水、磁铁，和博物馆里的旧东西。看完可以在家里试一个小实验。',
+      blurbEn: 'Light, water, magnets, and old things in museums. After watching, you can try a small experiment at home.',
+      icon: '🧪',
+      color: '#3aa37a',
+      color2: '#1c6e52',
+      badge: '正在准备'
+    }
+  ];
   var GUEST_SUFFIXES = ['done-v1', 'missions-v1', 'theme', 'autoplay', 'covers-v1', 'pos-v1'];
+  function t(key, fallback) {
+    var i18n = global.BiliPicksI18n;
+    if (i18n && typeof i18n.t === 'function') {
+      var s = i18n.t(key);
+      if (s && s !== key) return s;
+    }
+    return fallback;
+  }
   var TRACK_KEY = 'bilipicks-track';
   var AUTH_KEY = 'bilipicks-auth-v1';
   var PROFILE_KEY = 'bilipicks-profile-v1';
@@ -97,11 +187,17 @@
     return {
       id: c.id,
       title: c.title,
+      titleEn: c.titleEn,
       ages: c.ages,
+      agesEn: c.agesEn,
       blurb: c.blurb,
+      blurbEn: c.blurbEn,
+      pageTitle: c.pageTitle,
+      pageTitleEn: c.pageTitleEn,
       icon: c.icon,
       color: c.color,
-      color2: c.color2
+      color2: c.color2,
+      stage: c.stage
     };
   }
   function courseList() {
@@ -564,29 +660,29 @@
   function friendly(err) {
     var m = (err && err.message) ? String(err.message) : '';
     var low = m.toLowerCase();
-    if (low.indexOf('already') >= 0 || low.indexOf('registered') >= 0 || low.indexOf('exists') >= 0) return '这个邮箱已经注册过，请直接登录。';
-    if (low.indexOf('invalid login') >= 0 || low.indexOf('invalid_grant') >= 0 || low.indexOf('credentials') >= 0) return '邮箱或密码不对。';
-    if (low.indexOf('password') >= 0 && (low.indexOf('short') >= 0 || low.indexOf('least') >= 0 || low.indexOf('weak') >= 0)) return '密码至少 6 位。';
-    if (low.indexOf('email') >= 0 && (low.indexOf('valid') >= 0 || low.indexOf('invalid') >= 0)) return '这个邮箱看起来不对。';
-    if (low.indexOf('rate') >= 0 || low.indexOf('too many') >= 0) return '试得太勤了，请稍后再试。';
-    if (low.indexOf('failed to fetch') >= 0 || low.indexOf('network') >= 0 || low.indexOf('load failed') >= 0) return '连不上登录服务。可以继续用访客模式，进度先存在这台设备上。';
-    if (!m) return '没有完成，请稍后再试。';
-    return '没有完成：' + m;
+    if (low.indexOf('already') >= 0 || low.indexOf('registered') >= 0 || low.indexOf('exists') >= 0) return t('err.emailTaken', '这个邮箱已经注册过，请直接登录。');
+    if (low.indexOf('invalid login') >= 0 || low.indexOf('invalid_grant') >= 0 || low.indexOf('credentials') >= 0) return t('err.badLogin', '邮箱或密码不对。');
+    if (low.indexOf('password') >= 0 && (low.indexOf('short') >= 0 || low.indexOf('least') >= 0 || low.indexOf('weak') >= 0)) return t('err.passwordShort', '密码至少 6 位。');
+    if (low.indexOf('email') >= 0 && (low.indexOf('valid') >= 0 || low.indexOf('invalid') >= 0)) return t('err.badEmail', '这个邮箱看起来不对。');
+    if (low.indexOf('rate') >= 0 || low.indexOf('too many') >= 0) return t('err.tooMany', '试得太勤了，请稍后再试。');
+    if (low.indexOf('failed to fetch') >= 0 || low.indexOf('network') >= 0 || low.indexOf('load failed') >= 0) return t('err.offlineAuth', '连不上登录服务。可以继续用访客模式，进度先存在这台设备上。');
+    if (!m) return t('err.failed', '没有完成，请稍后再试。');
+    return t('err.failedPrefix', '没有完成：') + m;
   }
   function checkEmailPassword(email, password) {
     email = String(email || '').trim();
     password = String(password || '');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '请填写家长或监护人的邮箱。';
-    if (password.length < 6) return '密码至少 6 位。';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return t('err.parentEmail', '请填写家长或监护人的邮箱。');
+    if (password.length < 6) return t('err.passwordShort', '密码至少 6 位。');
     return '';
   }
   function checkName(name) {
     name = String(name || '').replace(/\s+/g, ' ').trim();
-    if (!name) return '先写一个家里用的称呼，比如「姐姐」。';
-    if (name.length > 24) return '称呼请短一点，24 个字以内。';
-    if (name.indexOf('@') >= 0) return '称呼不用写邮箱。';
-    if (/[0-9]{6,}/.test(name)) return '不要填写电话号码。';
-    if (/\d{4}[-/.年]\d{1,2}/.test(name)) return '不要填写出生日期。';
+    if (!name) return t('err.needNickname', '先写一个家里用的称呼，比如「姐姐」。');
+    if (name.length > 24) return t('err.nicknameLong', '称呼请短一点，24 个字以内。');
+    if (name.indexOf('@') >= 0) return t('err.nicknameNotEmail', '称呼不用写邮箱。');
+    if (/[0-9]{6,}/.test(name)) return t('err.noPhone', '不要填写电话号码。');
+    if (/\d{4}[-/.年]\d{1,2}/.test(name)) return t('err.noBirthday', '不要填写出生日期。');
     return '';
   }
 
@@ -601,7 +697,7 @@
     if (key.length < 20) return false;
     return { url: url, anonKey: key };
   }
-  var UNCONFIGURED = '云端登录还没配置。公开页面用 config.public.js，本机的 config.js 可以覆盖它。';
+  function unconfigured() { return t('err.unconfigured', '云端登录还没配置。公开页面用 config.public.js，本机的 config.js 可以覆盖它。'); }
   // 已有能用的配置就用它。否则先试本机 config.js；404 或值不可用时再读 config.public.js。
   function loadConfig() {
     return new Promise(function (resolve) {
@@ -969,7 +1065,7 @@
   }
   function saveSelection(track, courseList, andGo) {
     var selected, body, sameProfile;
-    if (!COURSES[track]) return Promise.resolve({ ok: false, error: '没有这门课。' });
+    if (!COURSES[track]) return Promise.resolve({ ok: false, error: t('err.noCourse', '没有这门课。') });
     selected = listIds(courseList);
     if (selected.indexOf(track) < 0) selected.unshift(track);
     rememberTrack(track);
@@ -1019,7 +1115,7 @@
   function signUp(email, password) {
     var bad = checkEmailPassword(email, password);
     if (bad) return Promise.resolve({ ok: false, error: bad });
-    if (!config) return Promise.resolve({ ok: false, error: UNCONFIGURED });
+    if (!config) return Promise.resolve({ ok: false, error: unconfigured() });
     return api('/auth/v1/signup', {
       method: 'POST',
       token: config.anonKey,
@@ -1034,13 +1130,13 @@
   function signIn(email, password) {
     var bad = checkEmailPassword(email, password);
     if (bad) return Promise.resolve({ ok: false, error: bad });
-    if (!config) return Promise.resolve({ ok: false, error: UNCONFIGURED });
+    if (!config) return Promise.resolve({ ok: false, error: unconfigured() });
     return api('/auth/v1/token?grant_type=password', {
       method: 'POST',
       token: config.anonKey,
       body: { email: String(email).trim(), password: String(password) }
     }).then(function (data) {
-      if (!captureSession(data)) return { ok: false, error: '登录没有返回会话，请到邮箱确认后再试。' };
+      if (!captureSession(data)) return { ok: false, error: t('err.confirmEmail', '登录没有返回会话，请到邮箱确认后再试。') };
       mode = 'cloud';
       return afterAuth();
     }, function (err) {
@@ -1082,7 +1178,7 @@
     selected = listIds(courseList);
     if (!COURSES[track]) track = selected.length && COURSES[selected[0]] ? selected[0] : suggestedOr('jh');
     if (selected.indexOf(track) < 0) selected.unshift(track);
-    if (!session) return Promise.resolve({ ok: false, error: '请先登录。' });
+    if (!session) return Promise.resolve({ ok: false, error: t('err.needLogin', '请先登录。') });
     keep = profile;
     // 已经有当前孩子时，档案管理里新增不必把他换成当前，也不要掐掉正在上传的进度。
     activate = !keep || opts.activate !== false;
@@ -1096,7 +1192,7 @@
     }).then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : null;
       var created;
-      if (!row) return { ok: false, error: '没有建成档案，请稍后再试。' };
+      if (!row) return { ok: false, error: t('err.profileFailed', '没有建成档案，请稍后再试。') };
       if (!row.courses) row.courses = selected.slice();
       created = normalizeProfile(row);
       if (!created.courses.length) created.courses = selected.slice();
@@ -1141,7 +1237,7 @@
     location.href = urlWithTrack(track);
   }
   function loadProfileProgress(id) {
-    if (!session) return Promise.resolve({ ok: false, error: '请先登录。' });
+    if (!session) return Promise.resolve({ ok: false, error: t('err.needLogin', '请先登录。') });
     if (profile && profile.id === id) return Promise.resolve({ ok: true, data: normalizeData(clone(cloudData)) });
     return api('/rest/v1/progress?profile_id=eq.' + encodeURIComponent(id) + '&select=data,updated_at').then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : null;
@@ -1359,6 +1455,8 @@
     learningRecord: learningRecord,
     migrateGuestStorage: migrateGuestStorage,
     COURSES: COURSES,
-    TRACKS: COURSES
+    TRACKS: COURSES,
+    STAGES: STAGES,
+    UPCOMING: UPCOMING
   };
 })(typeof window !== 'undefined' ? window : this);

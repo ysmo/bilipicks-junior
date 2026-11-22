@@ -2,6 +2,7 @@
 const fs = require('fs');
 const vm = require('vm');
 const code = fs.readFileSync(__dirname + '/account.js', 'utf8');
+const i18nSrc = fs.readFileSync(__dirname + '/i18n.js', 'utf8');
 const html = fs.readFileSync(__dirname + '/index.html', 'utf8');
 const tv = fs.readFileSync(__dirname + '/tv.html', 'utf8');
 const schema = fs.readFileSync(__dirname + '/supabase/schema.sql', 'utf8');
@@ -81,18 +82,21 @@ assert(code.indexOf('function setCourses') < 0, 'course list editing is not an a
 assert(code.indexOf('opts.activate !== false') >= 0, 'adding a child can leave the current child selected');
 
 const sw = html.slice(html.indexOf('function renderSwitcher'), html.indexOf('function manageItem'));
-assert(sw.indexOf('档案管理') >= 0, 'everyday sheet opens 档案管理');
+assert(sw.indexOf("t('account.manage')") >= 0 || sw.indexOf('档案管理') >= 0, 'everyday sheet opens 档案管理');
 assert(sw.indexOf('删除') < 0 && sw.indexOf('调整') < 0, 'everyday sheet has no delete and no course editor');
 assert(html.indexOf('调整') < 0 && html.indexOf('setCourses') < 0 && html.indexOf('course-edit') < 0, 'the site no longer offers course adjustment');
-assert(html.indexOf('查找称呼') >= 0 && html.indexOf('>新增<') >= 0, 'management can filter and add');
-assert(html.indexOf('学习记录') >= 0 && html.indexOf('id="delete-confirm"') >= 0, 'records and confirmed delete live in management');
-assert(html.split('个人信息保护法').length === 2, 'the under-14 note stays on the login form only');
+assert((html.indexOf("t('account.findName')") >= 0 || html.indexOf('查找称呼') >= 0) && (html.indexOf("t('account.add')") >= 0 || html.indexOf('>新增<') >= 0), 'management can filter and add');
+assert((html.indexOf("t('account.records')") >= 0 || html.indexOf('学习记录') >= 0) && html.indexOf('id="delete-confirm"') >= 0, 'records and confirmed delete live in management');
+assert(html.indexOf("t('account.pipl')") >= 0 && (typeof i18nSrc === 'undefined' ? html : i18nSrc).split('个人信息保护法').length === 2, 'the under-14 note stays on the login form only');
 assert(html.indexOf('id="gate-choices"') >= 0, 'the first screen still lists courses');
+assert(html.indexOf('课程中心') >= 0, 'the first screen is the course center');
+assert(html.indexOf("t('badge.soon')") >= 0 || html.indexOf('正在准备') >= 0, 'upcoming courses are marked as being prepared');
+assert(html.indexOf('class="choice soon"') >= 0 || html.indexOf("soon ? ' soon'") >= 0 || html.indexOf("soon ? ' soon' : ''") >= 0, 'upcoming cards use the soon style');
 assert(html.indexOf('github.io') >= 0 && html.indexOf("location.protocol === 'file:'") >= 0, 'lan probe still skips github.io and file');
 
 assert(tv.indexOf('deleteProfile') < 0 && tv.indexOf('setCourses') < 0 && tv.indexOf('调整') < 0, 'tv settings do not adjust courses or delete a profile');
-assert(tv.indexOf('档案管理') >= 0, 'tv points profile changes to the website');
-assert(tv.indexOf('换一门课') >= 0, 'tv can still pick a course');
+assert(tv.indexOf("t('tv.manageNote')") >= 0 || tv.indexOf('档案管理') >= 0, 'tv points profile changes to the website');
+assert(tv.indexOf("t('tv.switchCourse')") >= 0 || tv.indexOf('换一门课') >= 0, 'tv can still pick a course');
 
 const reSrc = (html.match(/const re = (\/[\s\S]*?\/g);/) || [])[1];
 assert(reSrc, 'title scan exists');

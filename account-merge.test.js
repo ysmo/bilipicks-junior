@@ -108,6 +108,17 @@ assert(courses.jh.prefix === 'bilipicks-jh' && courses.jh.legacyPrefix === 'bili
 assert(courses.g1.title === '从好奇到会看', 'elementary course title');
 assert(courses.jh.title === '初中生学 AI', 'junior course title');
 assert(courses.y2 && courses.y2.title === '两岁看世界' && courses.y2.file === 'data-y2.js' && courses.y2.prefix === 'bilipicks-y2', 'toddler course is registered');
+assert(courses.y2.stage === 'early' && courses.g1.stage === 'primary' && courses.jh.stage === 'junior', 'live courses have the right stage');
+const stages = context.BiliPicksAccount.STAGES || [];
+assert(stages.map(s => s.id).join(',') === 'early,primary,junior', 'STAGES has early, primary, junior in that order');
+const catalog = context.BiliPicksAccount.courseList();
+const catalogIds = catalog.map(c => c.id);
+assert(catalogIds.join(',') === 'y2,g1,jh', 'courseList is the live courses only');
+assert(catalogIds.indexOf('snd') < 0 && catalogIds.indexOf('why') < 0, 'upcoming ids stay out of the catalog');
+assert(!courses.snd && !courses.why, 'upcoming courses are not in COURSES');
+const upcoming = context.BiliPicksAccount.UPCOMING || [];
+assert(upcoming.some(c => c.id === 'snd' && c.stage === 'early') && upcoming.some(c => c.id === 'why' && c.stage === 'primary'), 'upcoming courses are listed separately');
+assert(catalog.every(c => c.stage), 'courseList exposes stage for the UI');
 assert(code.indexOf("s.src = src") >= 0 && code.indexOf("loadScript('config.js'") >= 0 && code.indexOf("loadScript('config.public.js'") >= 0, 'loadConfig tries config.js then config.public.js');
 assert(code.indexOf('service_role') < 0, 'account.js has no service role key');
 
@@ -125,5 +136,36 @@ assert(context.localStorage.getItem('bilipicks-c-demo-done-v1') === '{"a":1}', '
 assert(context.localStorage.getItem('bilipicks-old-demo-done-v1') === '{"a":1}', 'legacy guest key is not deleted');
 assert(context.localStorage.getItem('bilipicks-c-demo-missions-v1') === '{"kept":1}', 'existing new key is not overwritten');
 delete courses.demo;
+
+
+assert(courses.y2.titleEn === 'Seeing the World at Two', 'toddler English title');
+assert(courses.g1.titleEn === 'From Curiosity to Looking Closely', 'grade-1 English title');
+assert(courses.jh.titleEn === 'AI for Middle School', 'junior English title');
+assert(upcoming.some(c => c.id === 'snd' && c.titleEn === 'Listen, the World Is Sounding'), 'upcoming snd English title');
+assert(upcoming.some(c => c.id === 'why' && c.titleEn === 'Ask Why'), 'upcoming why English title');
+
+const i18nCode = fs.readFileSync(__dirname + '/i18n.js', 'utf8');
+const ictx = {
+  window: {},
+  console: console,
+  localStorage: { getItem: function () { return 'zh'; }, setItem: function () {} },
+  navigator: { language: 'zh-CN' }
+};
+ictx.window = ictx;
+vm.createContext(ictx);
+vm.runInContext(i18nCode, ictx);
+const I18n = ictx.BiliPicksI18n;
+assert(I18n && I18n.messages && I18n.messages.zh && I18n.messages.en, 'i18n dictionary loaded');
+const zhKeys = Object.keys(I18n.messages.zh);
+const enKeys = Object.keys(I18n.messages.en);
+const missingEn = zhKeys.filter(k => !Object.prototype.hasOwnProperty.call(I18n.messages.en, k));
+const missingZh = enKeys.filter(k => !Object.prototype.hasOwnProperty.call(I18n.messages.zh, k));
+assert(missingEn.length === 0, 'every zh key has English: ' + missingEn.slice(0, 8).join(','));
+assert(missingZh.length === 0, 'every en key has Chinese: ' + missingZh.slice(0, 8).join(','));
+I18n.setLang('en', true);
+assert(I18n.t('gate.title') === 'Course Center', 'English course center title');
+assert(I18n.t('soon.toast').indexOf('still being curated') >= 0, 'English upcoming toast');
+I18n.setLang('zh', true);
+assert(I18n.t('gate.title') === '课程中心', 'Chinese course center title stays the source text');
 
 if (!process.exitCode) console.log('merge ok');
