@@ -107,6 +107,7 @@ assert(courses.g1.prefix === 'bilipicks-g1' && courses.g1.legacyPrefix === 'bili
 assert(courses.jh.prefix === 'bilipicks-jh' && courses.jh.legacyPrefix === 'bilipicks-jh', 'junior guest keys stay put');
 assert(courses.g1.title === '从好奇到会看', 'elementary course title');
 assert(courses.jh.title === '初中生学 AI', 'junior course title');
+assert(courses.y2 && courses.y2.title === '两岁看世界' && courses.y2.file === 'data-y2.js' && courses.y2.prefix === 'bilipicks-y2', 'toddler course is registered');
 assert(code.indexOf("s.src = src") >= 0 && code.indexOf("loadScript('config.js'") >= 0 && code.indexOf("loadScript('config.public.js'") >= 0, 'loadConfig tries config.js then config.public.js');
 assert(code.indexOf('service_role') < 0, 'account.js has no service role key');
 

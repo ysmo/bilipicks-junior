@@ -4,6 +4,7 @@
 
 现在先有两门课，清单还是原来的两份，以后可以再加，不用再做一个站：
 
+- **两岁看世界**。大约 2 岁，5 关共 31 条短片：熊猫、动物园的宝宝、小鸟，还有花、雨和雪。请家长陪着，每次一条就停。清单在 `data-y2.js`。
 - **从好奇到会看**。大约 6～7 岁，6 关：故事识字、小动物、博物馆和简单的「为什么」。清单在 `data-g1.js`，来自 [ysmo/bilipicks-grade1](https://github.com/ysmo/bilipicks-grade1)。
 - **初中生学 AI**。大约 12～15 岁，9 关，从好奇走到神经网络。清单在 `data.js`。课里面的路线标题仍是「从好奇到机器学习」。
 
@@ -20,11 +21,11 @@
 - 还没登录：记在这台浏览器里，键名 `bilipicks-track`。
 - 登录之后：记在当前孩子的档案上。一个孩子可以选一门或多门课，每门课的进度分开。换设备登录同一个孩子，会打开他上次用的那门。
 
-地址上可以写 `?track=g1`（从好奇到会看）或 `?track=jh`（初中生学 AI），电视版同样认，例如 `tv.html?track=g1`。这就是以后从旧的一年级网址跳过来时可以用的参数。课程编号仍用 `g1` 和 `jh`，这样旧链接和原来的本地进度键不用改。
+地址上可以写 `?track=y2`（两岁看世界）、`?track=g1`（从好奇到会看）或 `?track=jh`（初中生学 AI），电视版同样认，例如 `tv.html?track=y2`。这就是以后从旧的一年级网址跳过来时可以用的参数。小学课和初中课的编号仍用 `g1` 和 `jh`，这样旧链接和原来的本地进度键不用改。
 
 顶栏可以换成另一门。换课不会清掉其他课已经看过的记录。
 
-再加一门课：准备一份和 `data.js` 一样的清单，然后在 `account.js` 的 `COURSES` 里加一项（编号、标题、清单文件、localStorage 前缀）。进度按课程编号分开存。如果新编号要沿用旧的本地键，把 `legacyPrefix` 设成原来的前缀，打开页面时会拷过去，不会删掉旧键。新编号要写进档案的 `track` 时，先执行 [`supabase/migrate-courses.sql`](supabase/migrate-courses.sql)，否则数据库仍只接受原来的检查。
+再加一门课：准备一份和 `data.js` 一样的清单，然后在 `account.js` 的 `COURSES` 里加一项（编号、标题、清单文件、localStorage 前缀）。进度按课程编号分开存。如果新编号要沿用旧的本地键，把 `legacyPrefix` 设成原来的前缀，打开页面时会拷过去，不会删掉旧键。档案的 `track` 现在接受类似 `y2` 这样的编号；如果数据库还是只接受旧检查，再执行 [`supabase/migrate-courses.sql`](supabase/migrate-courses.sql)。
 
 ## 怎么打开
 
@@ -39,7 +40,7 @@ python3 -m http.server 8765
 
 然后打开 <http://127.0.0.1:8765/>（网页版）或 <http://127.0.0.1:8765/tv.html>（电视版）。
 
-没登录时，进度只在这台设备上。从好奇到会看用原来的 `bilipicks-g1-*`，初中生学 AI 用原来的 `bilipicks-jh-*`（看完、动手任务、自动播放、深色模式、封面缓存）。这些键还能接着用，不会把两门课的记录混在一起。播放位置如果已经记下，会多一个 `bilipicks-g1-pos-v1` 或 `bilipicks-jh-pos-v1`。
+没登录时，进度只在这台设备上。两岁看世界用 `bilipicks-y2-*`，从好奇到会看用原来的 `bilipicks-g1-*`，初中生学 AI 用原来的 `bilipicks-jh-*`（看完、动手任务、自动播放、深色模式、封面缓存）。这些键还能接着用，不会把几门课的记录混在一起。播放位置如果已经记下，会多一个 `bilipicks-y2-pos-v1`、`bilipicks-g1-pos-v1` 或 `bilipicks-jh-pos-v1`。
 
 公开的 GitHub Pages 用 B 站官方嵌入播放器，不抓取、不代理视频流。B 站限制站外播放最高约 480P，点「去 B 站看高清」可到 B 站看更高清晰度。家里的树莓派如果提供同源的 `/proxy/`，同一份页面会改用本地播放器，见下文「家里的树莓派」。每门课用的是同一套播放器。
 
@@ -102,6 +103,16 @@ location /proxy/ {
 
 ## 课程概要
 
+### 两岁看世界
+
+一共 5 关、31 条短片，请家长陪坐。每次只看一条就停，然后去做真事；不要当电子奶嘴。两岁前除视频通话外宜尽量少看屏幕，这门课给大约 2 岁、家长陪着使用。
+
+1. **先看熊猫** — 走路吃竹子、雪天、幼崽、母子饮水、玩冰、阳光。看完学熊猫走路或拍手。
+2. **动物园的宝宝** — 小长颈鹿、小河马、小熊吃瓜、小企鹅、南美貘宝宝、小熊猫「三三」。看完洗手。
+3. **鸟儿来了** — 故宫的鸭子、白腹锦鸡、黑颈鹤一家与齐舞、湿地里的巢。看完拍手或哼歌，再看窗外。
+4. **花、雨和雪** — 故宫的雪、海棠、牡丹，植物园的雨、桂花、荷花和红叶。看完去窗边看天。
+5. **看完一条，去做真事** — 雪地里的金丝猴和大熊猫、园林四季的声音、给小黑熊做冰棍。看完关机，翻纸书或看真的树和天。
+
 ### 从好奇到会看
 
 一共 6 关，都是现在就能看的小片子。每一关最后有一个在家里做的小任务，不用打开 Google、python.org 或 Scratch 编辑器。
@@ -142,6 +153,7 @@ location /proxy/ {
 | `supabase/migrate-courses.sql` | 已有项目补上 `courses`、放宽 `track`。不重做表，不改已有进度 |
 | `data.js` | 「初中生学 AI」清单（必须保持 `const DATA = {...};` 单行，以便 `update.py` 读写） |
 | `data-g1.js` | 「从好奇到会看」清单，格式和 `data.js` 一样 |
+| `data-y2.js` | 「两岁看世界」清单，格式和 `data.js` 一样 |
 | `update.py` | 维护脚本：检查失效视频、补封面和时长、添加新视频（只用 Python 标准库） |
 | `android/` | 原项目的安卓电视应用，本改编版未改 APK |
 | `vendor/hls.min.js` | 官方 hls.js 1.7.4。只在家里的 `/proxy/` 播放 HLS、而浏览器自己不会播时加载 |
@@ -151,8 +163,10 @@ location /proxy/ {
 ```bash
 python3 update.py --check
 python3 update.py --data data-g1.js --check
+python3 update.py --data data-y2.js --check
 python3 update.py add BV1xxxxxxxxx --cat 科学实验 --age 12 --reason "为什么推荐"
 python3 update.py --data data-g1.js add BV1xxxxxxxxx --cat 科学好奇 --age 6 --reason "为什么推荐"
+python3 update.py --data data-y2.js add BV1xxxxxxxxx --cat 熊猫朋友 --age 2 --reason "为什么推荐"
 ```
 
 合并是否会丢掉一门课的进度，可以用 `node account-merge.test.js` 在本地看一眼。档案列表、学习记录，以及删除档案时访客记录还在不在，可以用 `node account-profiles.test.js`。配置先读哪一份，可以用 `node account-config.test.js`。
