@@ -135,6 +135,81 @@
     for (i = 0; i < a.length; i++) if (b.indexOf(a[i]) < 0) return false;
     return true;
   }
+  function profileCourseIds(p) {
+    var ids = listIds(p && p.courses);
+    var track = storedTrack(p && p.track);
+    if (track && ids.indexOf(track) < 0) ids.unshift(track);
+    return ids;
+  }
+  function filterProfiles(list, query) {
+    var q = String(query || '').replace(/\s+/g, '').toLowerCase();
+    var out = [];
+    var i, p, name;
+    list = list || [];
+    if (!q) {
+      for (i = 0; i < list.length; i++) out.push(list[i]);
+      return out;
+    }
+    for (i = 0; i < list.length; i++) {
+      p = list[i];
+      name = String(p && p.display_name || '').replace(/\s+/g, '').toLowerCase();
+      if (name.indexOf(q) >= 0) out.push(p);
+    }
+    return out;
+  }
+  function learningRecord(p, data, titles) {
+    var enrolled = profileCourseIds(p);
+    var ids = enrolled.slice();
+    var courses = [];
+    var i, id, tr, done, position, seen, key, videos, item, last, completedCount;
+    data = normalizeData(data);
+    titles = titles || {};
+    for (id in data.tracks) {
+      if (!Object.prototype.hasOwnProperty.call(data.tracks, id)) continue;
+      if (ids.indexOf(id) >= 0) continue;
+      tr = data.tracks[id] || {};
+      if (Object.keys(tr.done || {}).length || Object.keys(tr.position || {}).length || Object.keys(tr.missions || {}).length) ids.push(id);
+    }
+    for (i = 0; i < ids.length; i++) {
+      id = ids[i];
+      tr = data.tracks[id] || emptyTrack();
+      done = tr.done || {};
+      position = tr.position || {};
+      seen = {};
+      videos = [];
+      last = null;
+      completedCount = 0;
+      for (key in done) if (Object.prototype.hasOwnProperty.call(done, key)) seen[key] = 1;
+      for (key in position) if (Object.prototype.hasOwnProperty.call(position, key)) seen[key] = 1;
+      for (key in seen) {
+        if (!Object.prototype.hasOwnProperty.call(seen, key)) continue;
+        item = {
+          id: key,
+          title: titles[key] || '',
+          completed: !!done[key],
+          completedAt: typeof done[key] === 'number' ? done[key] : 0,
+          positionSeconds: position[key] && typeof position[key].t === 'number' ? position[key].t : 0,
+          positionAt: position[key] && typeof position[key].at === 'number' ? position[key].at : 0
+        };
+        if (item.completed) completedCount++;
+        videos.push(item);
+        if (item.positionAt && (!last || item.positionAt > last.positionAt)) last = item;
+      }
+      videos.sort(function (a, b) {
+        return (b.completedAt || b.positionAt || 0) - (a.completedAt || a.positionAt || 0);
+      });
+      courses.push({
+        id: id,
+        title: COURSES[id] ? COURSES[id].title : id,
+        enrolled: enrolled.indexOf(id) >= 0,
+        completedCount: completedCount,
+        videoCount: videos.length,
+        last: last ? { id: last.id, title: last.title, seconds: last.positionSeconds, at: last.positionAt } : null,
+        videos: videos
+      });
+    }
+    return { name: p && p.display_name || '', courses: courses };
+  }
 
   function storageKeys(track) {
     var c = COURSES[track];
@@ -929,14 +1004,6 @@
     if (cloudData && cloudData.selected) selected = selected.concat(cloudData.selected);
     return saveSelection(track, selected, true);
   }
-  function setCourses(list) {
-    var selected = listIds(list);
-    var track;
-    if (!selected.length) return Promise.resolve({ ok: false, error: '至少留一门课。' });
-    track = currentTrack && selected.indexOf(currentTrack) >= 0 ? currentTrack : selected[0];
-    if (!COURSES[track]) return Promise.resolve({ ok: false, error: '没有这门课。' });
-    return saveSelection(track, selected, track !== currentTrack);
-  }
   function signUp(email, password) {
     var bad = checkEmailPassword(email, password);
     if (bad) return Promise.resolve({ ok: false, error: bad });
@@ -994,16 +1061,20 @@
       location.reload();
     });
   }
-  function createProfile(name, track, courseList) {
+  function createProfile(name, track, courseList, opts) {
     var shown = String(name || '').replace(/\s+/g, ' ').trim();
     var bad = checkName(shown);
-    var selected, body;
+    var selected, body, keep, activate;
+    opts = opts || {};
     if (bad) return Promise.resolve({ ok: false, error: bad });
     selected = listIds(courseList);
     if (!COURSES[track]) track = selected.length && COURSES[selected[0]] ? selected[0] : suggestedOr('jh');
     if (selected.indexOf(track) < 0) selected.unshift(track);
     if (!session) return Promise.resolve({ ok: false, error: '请先登录。' });
-    clearTimeout(pushTimer);
+    keep = profile;
+    // 已经有当前孩子时，档案管理里新增不必把他换成当前，也不要掐掉正在上传的进度。
+    activate = !keep || opts.activate !== false;
+    if (activate) clearTimeout(pushTimer);
     body = { user_id: session.user.id, display_name: shown, track: track };
     if (coursesColumn) body.courses = selected.slice();
     return api('/rest/v1/profiles', {
@@ -1012,24 +1083,28 @@
       body: body
     }).then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : null;
+      var created;
       if (!row) return { ok: false, error: '没有建成档案，请稍后再试。' };
       if (!row.courses) row.courses = selected.slice();
-      profile = normalizeProfile(row);
-      if (!profile.courses.length) profile.courses = selected.slice();
-      profiles.push(profile);
-      mode = 'cloud';
-      view.needsProfile = false;
+      created = normalizeProfile(row);
+      if (!created.courses.length) created.courses = selected.slice();
+      profiles.push(created);
+      if (activate) {
+        profile = created;
+        mode = 'cloud';
+        view.courses = profile.courses.slice();
+        try { localStorage.setItem(PROFILE_KEY, profile.id); } catch (e) {}
+        try { localStorage.setItem(PENDING_KEY, JSON.stringify({ profileId: profile.id, courses: profile.courses })); } catch (e2) {}
+      }
+      view.needsProfile = !profile;
       view.mode = 'cloud';
-      view.profile = publicProfile(profile);
+      view.profile = profile ? publicProfile(profile) : null;
       view.profiles = profiles.map(publicProfile);
-      view.courses = profile.courses.slice();
-      try { localStorage.setItem(PROFILE_KEY, profile.id); } catch (e) {}
-      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ profileId: profile.id, courses: profile.courses })); } catch (e2) {}
-      return { ok: true, profile: view.profile };
+      return { ok: true, profile: publicProfile(created), active: !!(profile && profile.id === created.id) };
     }, function (err) {
       if (coursesColumn && columnMissing(err)) {
         coursesColumn = false;
-        return createProfile(shown, track, selected);
+        return createProfile(shown, track, selected, opts);
       }
       return { ok: false, error: friendly(err) };
     });
@@ -1053,6 +1128,18 @@
     rememberTrack(track);
     location.href = urlWithTrack(track);
   }
+  function loadProfileProgress(id) {
+    if (!session) return Promise.resolve({ ok: false, error: '请先登录。' });
+    if (profile && profile.id === id) return Promise.resolve({ ok: true, data: normalizeData(clone(cloudData)) });
+    return api('/rest/v1/progress?profile_id=eq.' + encodeURIComponent(id) + '&select=data,updated_at').then(function (rows) {
+      var row = Array.isArray(rows) ? rows[0] : null;
+      return { ok: true, data: normalizeData(row && row.data) };
+    }, function (err) {
+      return { ok: false, error: friendly(err) };
+    });
+  }
+  // 进度表用外键挂在档案上，并设置了 on delete cascade。删掉档案这一行，云端进度跟着走。
+  // 这里不清理访客记在这台设备上的进度。
   function deleteProfile(id) {
     clearTimeout(pushTimer);
     return api('/rest/v1/profiles?id=eq.' + encodeURIComponent(id), {
@@ -1064,6 +1151,9 @@
         try { localStorage.removeItem(CACHE_KEY); } catch (e2) {}
       }
       location.reload();
+      return { ok: true };
+    }, function (err) {
+      return { ok: false, error: friendly(err) };
     });
   }
   function mergePlan() {
@@ -1162,13 +1252,13 @@
     onChange: null,
     save: save,
     setTrack: setTrack,
-    setCourses: setCourses,
     signUp: signUp,
     signIn: signIn,
     signOut: signOut,
     createProfile: createProfile,
     selectProfile: selectProfile,
     deleteProfile: deleteProfile,
+    loadProfileProgress: loadProfileProgress,
     mergePlan: mergePlan,
     mergeGuest: mergeGuest,
     dismissMerge: dismissMerge,
@@ -1252,6 +1342,9 @@
     mergeTrackState: mergeTrackState,
     mergeData: mergeData,
     courseList: courseList,
+    filterProfiles: filterProfiles,
+    profileCourseIds: profileCourseIds,
+    learningRecord: learningRecord,
     migrateGuestStorage: migrateGuestStorage,
     COURSES: COURSES,
     TRACKS: COURSES

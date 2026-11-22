@@ -180,6 +180,7 @@ h1,h2,h3,p{margin:0}
     <div class="tile pitem" id="p-track" style="margin-top:.7rem"><b id="p-track-t">换一门课</b><small id="p-track-s">按 OK 换一门，其他课的进度还在</small></div>
     <div class="tile pitem" id="p-acc" style="margin-top:.7rem"><b id="p-acc-t">孩子档案</b><small id="p-acc-s">未登录。按 OK 在下面输入邮箱</small></div>
     <div id="tv-kids"></div>
+    <p class="pnote" id="p-manage-note" hidden>添加、删除和查看学习记录，请用手机或电脑打开网页里的「档案管理」。这里只换当前的孩子。</p>
     <div id="tv-auth" hidden>
       <input class="tv-input" id="tv-email" type="email" autocomplete="username" placeholder="家长或监护人邮箱">
       <input class="tv-input" id="tv-pass" type="password" autocomplete="current-password" placeholder="密码，至少 6 位">
@@ -882,6 +883,8 @@ function paintIdle() {
   var ci;
   for (ci = 0; ci < list.length; ci++) if (list[ci].id === bp.track) course = list[ci].title;
   paintKids(bp);
+  var manageNote = $('#p-manage-note');
+  if (manageNote) manageNote.hidden = !(bp.mode === 'cloud' && bp.profile);
   $('#p-note').textContent = [course, who, '视频清单在网站上更新，不用重装应用', 'BiliPicks 不是 B 站官方产品'].filter(Boolean).join(' · ');
   var acc = $('#p-acc-s');
   var accT = $('#p-acc-t');
