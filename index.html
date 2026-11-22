@@ -487,14 +487,31 @@ body.picking main,body.picking .tabs,body.picking .nav,body.picking .search,body
 .kid-main b{display:block;font-size:16px;line-height:1.3}
 .kid-main small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;line-height:1.45}
 .kid-now{flex:none;font-size:12px;font-weight:800;color:var(--accent)}
-.kid-courses{margin:4px 2px 8px}
-.kid-courses summary{cursor:pointer;font-weight:700;padding:8px 0;color:var(--ink)}
 .add-box{margin-top:8px;padding:4px 12px 8px;border-radius:16px;background:var(--bg)}
 .add-box .field{margin:10px 0}
 .text-add,.text-quiet,.text-danger{display:inline-flex;align-items:center;min-height:40px;padding:0 2px;font-weight:700;background:none;color:var(--muted)}
 .text-add{color:var(--accent)}
 .text-danger{color:#9f1239}
 :root.dark .text-danger{color:#fda4af}
+.btn.danger{background:#9f1239;color:#fff}
+.btn.danger:hover{background:#881337}
+.open-manage{margin-top:8px}
+.manage-search{margin:4px 0 10px}
+.manage-search input{width:100%;height:42px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px}
+.manage-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.manage-row{display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px;padding:10px 12px;border-radius:16px;background:var(--bg)}
+.manage-row .kid-main{min-width:0;flex:1}
+.manage-row .kid-main b{display:block;font-size:16px;line-height:1.3}
+.manage-row .kid-main small{display:block;color:var(--muted);font-weight:600;font-size:12.5px;line-height:1.45}
+.manage-actions{display:flex;flex-wrap:wrap;gap:2px 12px;justify-content:flex-end;flex:none;margin-left:auto;padding-top:2px}
+.record-course{margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--bg)}
+.record-course > b{display:block;font-size:16px;line-height:1.35}
+.record-list{list-style:none;margin:8px 0 0;padding:0}
+.record-list li{padding:8px 0;border-top:1px solid var(--line)}
+.record-list li b{display:block;font-size:14.5px;font-weight:700;line-height:1.45}
+.record-list li span{display:block;color:var(--muted);font-size:12.5px;font-weight:600;margin-top:2px}
+.confirm-box{margin-top:4px;padding:14px;border-radius:16px;background:var(--bg)}
+.confirm-box p{line-height:1.65}
 .sheet-foot{margin-top:18px;padding-top:8px;border-top:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-start}
 .quiet{color:var(--muted);font-size:13.5px;line-height:1.65}
 .pipl{color:var(--muted);font-size:12.5px;line-height:1.65;margin-top:14px}
@@ -683,6 +700,9 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
   <div class="sheet-bg" data-close-account></div>
   <div class="sheet-panel" role="dialog" aria-labelledby="account-title">
     <div class="sheet-head">
+      <button type="button" class="icon-btn" id="account-back" hidden aria-label="返回">
+        <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6"/></svg>
+      </button>
       <b id="account-title">登录</b><span id="account-sub"></span>
       <button type="button" class="icon-btn" data-close-account aria-label="关闭">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
@@ -1842,12 +1862,6 @@ function courseById(id) {
 function courseNames(ids) {
   return (ids || []).map(id => { const c = courseById(id); return c ? c.title : id; }).join('、');
 }
-function courseChecks(selected) {
-  const set = new Set(selected || []);
-  return (window.BP.catalog || []).map(c =>
-    `<label class="checkline"><input type="checkbox" name="course" value="${esc(c.id)}" ${set.has(c.id) ? 'checked' : ''}>${esc(c.title)}<small>${esc(c.ages)}</small></label>`
-  ).join('');
-}
 function renderTrackMenu() {
   const bp = window.BP;
   const box = $('#track-menu-list');
@@ -1905,10 +1919,253 @@ function startChosenCourses() {
 }
 function closeAccount() { $('#account-sheet').hidden = true; }
 function accountCard(html) { $('#account-body').innerHTML = html; }
+let accountPane = { name: 'switch', query: '' };
+const titleCache = Object.create(null);
+const titleFiles = Object.create(null);
+function clockLabel(sec) {
+  sec = Math.max(0, Math.floor(Number(sec) || 0));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+function enrolledLabel(p) {
+  const ids = BiliPicksAccount.profileCourseIds(p);
+  return courseNames(ids) || '还没选课';
+}
+function kidMark(name) {
+  return esc(String(name || '孩').slice(0, 1));
+}
+function unescapeTitle(raw) {
+  try { return JSON.parse('"' + raw + '"'); } catch (e) { return raw; }
+}
+function absorbTitles(text) {
+  const re = /"id"\s*:\s*"([^"]+)"\s*,\s*"title"\s*:\s*"((?:\\.|[^"\\])*)"/g;
+  let m;
+  while ((m = re.exec(text))) titleCache[m[1]] = unescapeTitle(m[2]);
+}
+function ensureCourseTitles() {
+  if (window.DATA && window.DATA.videos) {
+    window.DATA.videos.forEach(v => { if (v && v.id && v.title) titleCache[v.id] = v.title; });
+  }
+  const courses = BiliPicksAccount.COURSES || {};
+  const files = Object.keys(courses).map(id => courses[id] && courses[id].file).filter(Boolean);
+  return Promise.all(files.map(file => {
+    if (titleFiles[file]) return Promise.resolve();
+    return fetch(file, {cache: 'force-cache'}).then(r => r.ok ? r.text() : '').then(text => {
+      if (text) absorbTitles(text);
+      titleFiles[file] = 1;
+    }).catch(() => {});
+  }));
+}
+function renderSwitcher() {
+  const bp = window.BP;
+  $('#account-title').textContent = '孩子档案';
+  $('#account-sub').textContent = (bp.user && bp.user.email) || '';
+  $('#account-back').hidden = true;
+  const list = (bp.profiles || []).map(p => {
+    const current = bp.profile && bp.profile.id === p.id;
+    return `<li><button type="button" class="kid${current ? ' on' : ''}" data-profile="${esc(p.id)}" aria-current="${current ? 'true' : 'false'}"><span class="kid-mark" aria-hidden="true">${kidMark(p.display_name)}</span><span class="kid-main"><b>${esc(p.display_name)}</b><small>${esc(enrolledLabel(p))}</small></span>${current ? '<span class="kid-now">当前</span>' : ''}</button></li>`;
+  }).join('');
+  const lead = bp.needsProfile || !(bp.profiles || []).length
+    ? '<p class="quiet">还没有孩子。到档案管理里写一个家里的称呼。</p>'
+    : '<p class="quiet">点一个称呼就换成那个孩子。各门课的进度都留着。</p>';
+  accountCard(`${lead}
+    <ul class="kids" id="profile-list">${list}</ul>
+    <button type="button" class="btn open-manage" id="open-manage">档案管理</button>
+    <div class="sheet-foot">
+      <button type="button" class="text-quiet" id="account-out">退出登录</button>
+    </div>`);
+  $$('#profile-list [data-profile]').forEach(btn => btn.onclick = () => {
+    if (bp.profile && btn.dataset.profile === bp.profile.id) return;
+    bp.selectProfile(btn.dataset.profile);
+  });
+  $('#open-manage').onclick = () => {
+    accountPane = { name: 'manage', query: '', adding: !(bp.profiles || []).length };
+    renderAccount();
+  };
+  $('#account-out').onclick = () => bp.signOut();
+}
+function manageItem(p, bp) {
+  const current = bp.profile && bp.profile.id === p.id;
+  return `<li class="manage-row">
+    <span class="kid-mark" aria-hidden="true">${kidMark(p.display_name)}</span>
+    <span class="kid-main"><b>${esc(p.display_name)}${current ? ' · 当前' : ''}</b><small>${esc(enrolledLabel(p))}</small></span>
+    <span class="manage-actions">
+      <button type="button" class="text-add" data-record="${esc(p.id)}">学习记录</button>
+      <button type="button" class="text-danger" data-delete="${esc(p.id)}">删除</button>
+    </span>
+  </li>`;
+}
+function manageListHtml(query) {
+  const bp = window.BP;
+  const rows = BiliPicksAccount.filterProfiles(bp.profiles || [], query);
+  if (!rows.length) return `<li class="quiet">${query ? '没有叫这个的孩子。' : '还没有孩子。'}</li>`;
+  return rows.map(p => manageItem(p, bp)).join('');
+}
+function bindManageList() {
+  $$('#manage-list [data-record]').forEach(btn => btn.onclick = () => openRecord(btn.getAttribute('data-record')));
+  $$('#manage-list [data-delete]').forEach(btn => btn.onclick = () => {
+    accountPane = { name: 'confirm', id: btn.getAttribute('data-delete'), query: accountPane.query || '' };
+    renderAccount();
+  });
+}
+function renderManage() {
+  const bp = window.BP;
+  $('#account-title').textContent = '档案管理';
+  $('#account-sub').textContent = '';
+  $('#account-back').hidden = false;
+  const adding = !!accountPane.adding;
+  accountCard(`<p class="quiet">可以查找称呼、新增孩子、查看学习记录，或删除档案。选课请回到首页。</p>
+    <div class="manage-search"><input id="manage-q" type="search" placeholder="查找称呼" aria-label="查找称呼" value="${esc(accountPane.query || '')}"></div>
+    <ul class="manage-list" id="manage-list">${manageListHtml(accountPane.query || '')}</ul>
+    <button type="button" class="text-add" id="add-child-toggle" ${adding ? 'hidden' : ''}>新增</button>
+    <form id="profile-form" class="add-box" ${adding ? '' : 'hidden'}>
+      <label class="field"><span>家里的称呼</span><input name="name" maxlength="24" autocomplete="off" placeholder="比如姐姐、弟弟。不是姓名" required></label>
+      <button class="btn primary" type="submit">保存这个孩子</button>
+      <p class="quiet">只写称呼，不写姓名、学校、电话或生日。新建后先记着现在这门课，要换课回到首页选。</p>
+    </form>
+    <p class="err" id="account-err" hidden></p>`);
+  bindManageList();
+  const q = $('#manage-q');
+  if (q) q.oninput = () => {
+    accountPane.query = q.value;
+    $('#manage-list').innerHTML = manageListHtml(q.value);
+    bindManageList();
+  };
+  const addToggle = $('#add-child-toggle');
+  if (addToggle) addToggle.onclick = () => {
+    accountPane.adding = true;
+    $('#profile-form').hidden = false;
+    addToggle.hidden = true;
+    const input = $('#profile-form [name=name]');
+    if (input) input.focus();
+  };
+  const form = $('#profile-form');
+  if (form) form.onsubmit = e => {
+    e.preventDefault();
+    const name = new FormData(e.target).get('name');
+    const er = $('#account-err');
+    const submit = e.target.querySelector('[type=submit]');
+    const track = bp.track || bp.suggestedTrack || 'jh';
+    const hadProfile = !!(bp.profile && bp.profile.id);
+    er.hidden = true;
+    if (submit) submit.disabled = true;
+    bp.createProfile(name, track, track ? [track] : [], { activate: !hadProfile }).then(res => {
+      if (!res || !res.ok) {
+        if (submit) submit.disabled = false;
+        er.hidden = false;
+        er.textContent = (res && res.error) || '没有建成。';
+        return;
+      }
+      if (res.active) {
+        bp.needsProfile = false;
+        return bp.setTrack((res.profile && res.profile.track) || track);
+      }
+      accountPane.adding = false;
+      accountPane.query = '';
+      renderManage();
+    });
+  };
+  if (adding) {
+    const input = form && form.querySelector('[name=name]');
+    if (input) input.focus();
+  }
+}
+function recordHtml(rec) {
+  const courses = (rec && rec.courses) || [];
+  if (!courses.length) return '<p class="quiet">还没有学习记录。回到首页选一门课，看完点「看完了」，就会记在这里。</p>';
+  return courses.map(c => {
+    const videos = c.videos || [];
+    const last = c.last && (c.last.seconds > 0 || c.last.at) ? c.last : null;
+    const lastName = last ? (last.title || last.id || '') : '';
+    const lastLine = last ? `<p class="quiet">上次看到 ${esc(clockLabel(last.seconds))}${lastName ? ' · ' + esc(lastName) : ''}</p>` : '';
+    const items = videos.length
+      ? `<ul class="record-list">${videos.map(v => {
+          const title = v.title || v.id;
+          const meta = v.completed
+            ? ('看完' + (v.positionSeconds > 0 ? ' · 播到 ' + clockLabel(v.positionSeconds) : ''))
+            : (v.positionSeconds > 0 ? '看到 ' + clockLabel(v.positionSeconds) : '有记录');
+          return `<li><b>${esc(title)}</b><span>${esc(meta)}</span></li>`;
+        }).join('')}</ul>`
+      : '<p class="quiet">这门课还没有观看记录。</p>';
+    return `<section class="record-course"><b>${esc(c.title || c.id)}</b><p class="quiet">看完 ${c.completedCount} 条</p>${lastLine}${items}</section>`;
+  }).join('');
+}
+function renderRecord() {
+  const bp = window.BP;
+  const p = (bp.profiles || []).find(k => k.id === accountPane.id);
+  $('#account-title').textContent = '学习记录';
+  $('#account-sub').textContent = (p && p.display_name) || '';
+  $('#account-back').hidden = false;
+  if (accountPane.loading) {
+    accountCard('<p class="quiet">正在读已经记下的进度…</p>');
+    return;
+  }
+  if (accountPane.error) {
+    accountCard(`<p class="err">${esc(accountPane.error)}</p>`);
+    return;
+  }
+  accountCard(recordHtml(accountPane.record));
+}
+function openRecord(id) {
+  const bp = window.BP;
+  const p = (bp.profiles || []).find(k => k.id === id);
+  accountPane = { name: 'record', id: id, query: accountPane.query || '', loading: true, record: null, error: '' };
+  renderAccount();
+  Promise.all([
+    bp.loadProfileProgress(id),
+    ensureCourseTitles()
+  ]).then(pair => {
+    if (accountPane.name !== 'record' || accountPane.id !== id) return;
+    const res = pair[0];
+    if (!res || !res.ok) {
+      accountPane.loading = false;
+      accountPane.error = (res && res.error) || '没有读到学习记录。';
+      renderAccount();
+      return;
+    }
+    accountPane.loading = false;
+    accountPane.record = BiliPicksAccount.learningRecord(p || { id: id, display_name: '', courses: [] }, res.data, titleCache);
+    renderAccount();
+  });
+}
+function renderConfirm() {
+  const bp = window.BP;
+  const p = (bp.profiles || []).find(k => k.id === accountPane.id);
+  const name = (p && p.display_name) || '这个孩子';
+  $('#account-title').textContent = '档案管理';
+  $('#account-sub').textContent = '';
+  $('#account-back').hidden = false;
+  accountCard(`<div class="confirm-box">
+      <p>删除「${esc(name)}」的档案和云端进度？这台设备上的访客记录还在。</p>
+      <div class="hero-actions">
+        <button type="button" class="btn" id="delete-cancel">取消</button>
+        <button type="button" class="btn danger" id="delete-confirm">删除档案</button>
+      </div>
+      <p class="err" id="account-err" hidden></p>
+    </div>`);
+  $('#delete-cancel').onclick = () => {
+    accountPane = { name: 'manage', query: accountPane.query || '', adding: false };
+    renderAccount();
+  };
+  $('#delete-confirm').onclick = () => {
+    const er = $('#account-err');
+    const btn = $('#delete-confirm');
+    er.hidden = true;
+    btn.disabled = true;
+    bp.deleteProfile(accountPane.id).then(res => {
+      if (res && res.ok) return;
+      btn.disabled = false;
+      er.hidden = false;
+      er.textContent = (res && res.error) || '没有删掉，请稍后再试。';
+    });
+  };
+}
 function renderAccount() {
   const bp = window.BP;
   const note = '不满 14 周岁的孩子，请由家长或监护人注册并管理这个账号（个人信息保护法）。这里只保存监护人邮箱和家里的称呼，不收集姓名、学校、电话或出生日期。';
   $('#account-sub').textContent = '';
+  $('#account-back').hidden = true;
   if (!bp.configured) {
     $('#account-title').textContent = '云端登录';
     accountCard(`<p>云端登录还没配置。公开的 GitHub Pages 使用仓库里的 <b>config.public.js</b>（anon 公钥，数据由行级安全保护）。本机的 <b>config.js</b> 可以覆盖它。两份现在都不可用，可以继续用访客模式。</p><p class="quiet">进度只存在这台设备上。每门课各记各的。</p>`);
@@ -1920,75 +2177,10 @@ function renderAccount() {
     return;
   }
   if (bp.mode === 'cloud' && bp.user) {
-    $('#account-title').textContent = '孩子档案';
-    $('#account-sub').textContent = bp.user.email || '';
-    const list = bp.profiles.map(p => {
-      const ids = (p.courses && p.courses.length) ? p.courses : (p.track ? [p.track] : []);
-      const current = bp.profile && bp.profile.id === p.id;
-      const mark = esc(String(p.display_name || '孩').slice(0, 1));
-      return `<li><button type="button" class="kid${current ? ' on' : ''}" data-profile="${esc(p.id)}" aria-current="${current ? 'true' : 'false'}"><span class="kid-mark" aria-hidden="true">${mark}</span><span class="kid-main"><b>${esc(p.display_name)}</b><small>${esc(courseNames(ids) || '还没选课')}</small></span>${current ? '<span class="kid-now">当前</span>' : ''}</button></li>`;
-    }).join('');
-    const preset = bp.track ? [bp.track] : (bp.suggestedTrack ? [bp.suggestedTrack] : []);
-    const editing = bp.profile ? ((bp.profile.courses && bp.profile.courses.length) ? bp.profile.courses : (bp.profile.track ? [bp.profile.track] : [])) : [];
-    const hasKids = bp.profiles.length > 0;
-    accountCard(`${bp.needsProfile ? '<p class="quiet">先添一个孩子。只写家里的称呼，不写姓名、学校、电话或生日。</p>' : '<p class="quiet">点一个称呼就换成那个孩子。各门课的进度都留着。</p>'}
-      <ul class="kids" id="profile-list">${list}</ul>
-      ${bp.profile ? `<details class="kid-courses"><summary>调整「${esc(bp.profile.display_name)}」的课</summary><div id="course-edit">${courseChecks(editing)}</div><button type="button" class="btn sm" id="courses-save">保存</button><p class="quiet">取消勾选不会清掉已经看过的进度。</p></details>` : ''}
-      <button type="button" class="text-add" id="add-child-toggle" ${hasKids ? '' : 'hidden'}>添加孩子</button>
-      <form id="profile-form" class="add-box" ${hasKids ? 'hidden' : ''}>
-        <label class="field"><span>家里的称呼</span><input name="name" maxlength="24" placeholder="比如姐姐、弟弟。不是姓名" required></label>
-        <div class="field"><span>选课，可多选</span>${courseChecks(preset)}</div>
-        <button class="btn primary" type="submit">保存这个孩子</button>
-        <p class="quiet">只写称呼，不写姓名、学校、电话或生日。</p>
-      </form>
-      <div class="sheet-foot">
-        ${bp.profile ? `<button type="button" class="text-danger" id="profile-delete">删除「${esc(bp.profile.display_name)}」的档案</button>` : ''}
-        <button type="button" class="text-quiet" id="account-out">退出登录</button>
-      </div>
-      <p class="err" id="account-err" hidden></p>`);
-    $$('#profile-list [data-profile]').forEach(btn => btn.onclick = () => {
-      if (bp.profile && btn.dataset.profile === bp.profile.id) return;
-      bp.selectProfile(btn.dataset.profile);
-    });
-    const addToggle = $('#add-child-toggle');
-    if (addToggle) addToggle.onclick = () => {
-      const form = $('#profile-form');
-      form.hidden = false;
-      addToggle.hidden = true;
-      const input = form.querySelector('[name=name]');
-      if (input) input.focus();
-    };
-    const saveCourses = $('#courses-save');
-    if (saveCourses) saveCourses.onclick = () => {
-      const ids = [...$$('#course-edit input:checked')].map(el => el.value);
-      const er = $('#account-err');
-      er.hidden = true;
-      bp.setCourses(ids).then(res => {
-        if (!res || !res.ok) { er.hidden = false; er.textContent = (res && res.error) || '没有保存。'; return; }
-        if (res.track === bp.track) renderAccount();
-      });
-    };
-    $('#profile-form').onsubmit = e => {
-      e.preventDefault();
-      const fd = new FormData(e.target);
-      const ids = fd.getAll('course');
-      const er = $('#account-err');
-      er.hidden = true;
-      if (!ids.length) { er.hidden = false; er.textContent = '先选一门课。可以多选。'; return; }
-      bp.createProfile(fd.get('name'), ids[0], ids).then(res => {
-        if (!res.ok) { er.hidden = false; er.textContent = res.error; return; }
-        bp.needsProfile = false;
-        return bp.setTrack(ids[0]);
-      }).then(res => {
-        if (res && !res.ok) { er.hidden = false; er.textContent = res.error || '没有打开这门课。'; }
-      });
-    };
-    const del = $('#profile-delete');
-    if (del) del.onclick = () => {
-      if (confirm('删除这个孩子的档案和云端进度？这台设备上的访客记录还在。')) bp.deleteProfile(bp.profile.id);
-    };
-    $('#account-out').onclick = () => bp.signOut();
-    return;
+    if (accountPane.name === 'manage') return renderManage();
+    if (accountPane.name === 'record') return renderRecord();
+    if (accountPane.name === 'confirm') return renderConfirm();
+    return renderSwitcher();
   }
   $('#account-title').textContent = '家长登录';
   accountCard(`<p class="quiet">一个邮箱下面可以有几个孩子，进度按孩子、按课分开。</p>
@@ -2051,7 +2243,12 @@ function maybeShowMerge() {
   $('#merge-err').hidden = true;
   $('#merge-modal').hidden = false;
 }
-$('#btn-account').onclick = () => { $('#account-sheet').hidden = false; renderAccount(); };
+function openAccount() {
+  accountPane = { name: 'switch', query: '' };
+  $('#account-sheet').hidden = false;
+  renderAccount();
+}
+$('#btn-account').onclick = () => openAccount();
 $('#account-sheet').addEventListener('click', e => { if (e.target.closest('[data-close-account]')) closeAccount(); });
 $('#gate').addEventListener('click', e => {
   const b = e.target.closest('[data-track]');
@@ -2068,7 +2265,12 @@ const gateName = $('#gate-name');
 if (gateName) gateName.addEventListener('keydown', e => {
   if (e.key === 'Enter') { e.preventDefault(); startChosenCourses(); }
 });
-$('#gate-login').onclick = () => { $('#account-sheet').hidden = false; renderAccount(); };
+$('#gate-login').onclick = () => openAccount();
+$('#account-back').onclick = () => {
+  if (accountPane.name === 'manage') accountPane = { name: 'switch', query: '' };
+  else accountPane = { name: 'manage', query: accountPane.query || '', adding: false };
+  renderAccount();
+};
 $('#btn-track').onclick = e => { e.stopPropagation(); $('#track-menu').hidden = !$('#track-menu').hidden; };
 $('#track-menu').addEventListener('click', e => {
   const b = e.target.closest('[data-track]');
