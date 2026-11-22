@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -78,6 +78,9 @@ h1,h2,h3,p{margin:0}
 .pitem{display:block;padding:1rem 1.2rem;background:#1f2c45}
 .pitem b{display:block;font-size:1.15rem}
 .pitem small{display:block;margin-top:.3rem;color:#a9b7cc;font-size:.88rem;line-height:1.5}
+.lang-row{margin-top:0;margin-bottom:.7rem;display:grid;grid-template-columns:1fr 1fr;grid-gap:.7rem}
+.lang-row .pitem{text-align:center;padding:.8rem 1rem}
+.lang-row .pitem.on{box-shadow:0 0 0 .18rem rgba(255,255,255,.85)}
 .tv-kid{margin-top:.55rem;background:#24324c}
 .tv-kid.on-kid{box-shadow:inset .28rem 0 0 #7ec8ff}
 .pitem .reddot{box-shadow:0 0 0 .18rem #1f2c45}
@@ -181,6 +184,10 @@ h1,h2,h3,p{margin:0}
 <section class="panel" id="panel" hidden>
   <div class="panel-box">
     <h2>设置</h2>
+    <div class="lang-row" role="group" aria-label="语言">
+      <div class="tile pitem" id="p-lang-zh" data-lang="zh"><b>中文</b></div>
+      <div class="tile pitem" id="p-lang-en" data-lang="en"><b>English</b></div>
+    </div>
     <div class="tile pitem f"><b id="p-upd-t">应用更新</b><small id="p-upd-s"></small><i class="reddot" id="p-upd-dot" hidden></i></div>
     <div class="tile pitem" id="p-track" style="margin-top:.7rem"><b id="p-track-t">换一门课</b><small id="p-track-s">按 OK 换一门，其他课的进度还在</small></div>
     <div class="tile pitem" id="p-acc" style="margin-top:.7rem"><b id="p-acc-t">孩子档案</b><small id="p-acc-s">未登录。按 OK 在下面输入邮箱</small></div>
@@ -198,12 +205,29 @@ h1,h2,h3,p{margin:0}
 </section>
 <div class="toast" id="toast"></div>
 
+<script src="i18n.js"></script>
 <script src="account.js"></script>
 <script>
 'use strict';
 // ---------- 工具 ----------
 var $ = function (s, el) { return (el || document).querySelector(s); };
 var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]; }); };
+function t(key, vars) { return (window.BiliPicksI18n && BiliPicksI18n.t(key, vars)) || key; }
+function tf(obj, name) { return (window.BiliPicksI18n && BiliPicksI18n.field(obj, name)) || (obj && obj[name]) || ''; }
+function tc(name) {
+  if (name === '全部') return t('cat.all');
+  if (name === '成长路线') return t('cat.path');
+  return (window.BiliPicksI18n && BiliPicksI18n.localizeCategory(name)) || name;
+}
+function currentCourseTitle() {
+  var bp = window.BP;
+  if (!bp) return '';
+  var list = bp.catalog || (window.BiliPicksAccount && BiliPicksAccount.courseList()) || [];
+  var i;
+  for (i = 0; i < list.length; i++) if (list[i].id === bp.track) return tf(list[i], 'title');
+  return bp.label || '';
+}
+
 var store = {
   get: function (k, fb) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } },
   set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
@@ -240,11 +264,11 @@ var lanMode = false;
 
 function mins(sec) {
   if (!sec) return '';
-  if (sec >= 3600) return Math.floor(sec / 3600) + ' 小时 ' + Math.round(sec % 3600 / 60) + ' 分';
-  return Math.max(1, Math.round(sec / 60)) + ' 分钟';
+  if (sec >= 3600) return t('time.hoursMinsShort', {h: Math.floor(sec / 3600), m: Math.round(sec % 3600 / 60)});
+  return t('time.mins', {m: Math.max(1, Math.round(sec / 60))});
 }
 var isSeries = function (v) { return v.parts > 1 && !v.page; };
-var lenLabel = function (v) { return isSeries(v) ? '共 ' + v.parts + ' 集' : mins(v.duration); };
+var lenLabel = function (v) { return isSeries(v) ? t('series.total', {n: v.parts}) : mins(v.duration); };
 var who = function (v) { return v.orig || v.channel; };
 // 电视上方块不大，封面请 CDN 缩成小图，省内存也快
 var coverUrl = function (v) {
@@ -349,11 +373,22 @@ function loadData() {
   });
 }
 
-var D, byId = {}, stages = [], pathItems = [], pathInfo = {};
+var D, byId = {}, stages = [], pathItems = [], pathInfo = {}, PATH_RAW;
+function applyPathLang() {
+  if (!PATH_RAW || !stages.length) return;
+  var track = window.BP && window.BP.track;
+  var path = (window.BiliPicksI18n && BiliPicksI18n.localizePath(PATH_RAW, track)) || PATH_RAW;
+  (path.stages || []).forEach(function (st, i) {
+    if (!stages[i]) return;
+    stages[i].name = st.name;
+    stages[i].age = st.age;
+  });
+}
 function prepare(data) {
   D = data;
   D.videos.forEach(function (v) { byId[v.id] = v; });
-  var path = D.path || {stages: []};
+  PATH_RAW = D.path || {stages: []};
+  var path = PATH_RAW;
   stages = path.stages.map(function (st, si) {
     var s = {no: si + 1, name: st.name, icon: st.icon || '', age: st.age || '', later: !!st.later, hue: HUES[si % 9], hue2: HUES2[si % 9], vids: [], notes: {}};
     st.items.forEach(function (it) {
@@ -365,6 +400,7 @@ function prepare(data) {
     });
     return s;
   });
+  applyPathLang();
 }
 var stageOf = function (v) { return v && pathInfo[v.id] ? stages[pathInfo[v.id].stage - 1] : null; };
 var doneCount = function (list) { return list.filter(function (v) { return isDone(v.id); }).length; };
@@ -378,8 +414,8 @@ function cardHTML(v, i, ctxPath) {
   var pi = pathInfo[v.id], st = stageOf(v);
   var title = ctxPath && pi ? pi.note : v.title;
   var sub = ctxPath && pi ? v.title : who(v) + ' · ' + lenLabel(v);
-  var badge = isDone(v.id) ? '<span class="ok">✓ 看过</span>' : '';
-  var step = ctxPath && pi ? '<span class="step" style="--h:' + st.hue + '">第 ' + pi.step + ' 步</span>' : '';
+  var badge = isDone(v.id) ? '<span class="ok">' + esc(t('watch.seen')) + '</span>' : '';
+  var step = ctxPath && pi ? '<span class="step" style="--h:' + st.hue + '">' + esc(t('tv.step', {n: pi.step})) + '</span>' : '';
   return '<div class="card' + (isDone(v.id) ? ' done' : '') + '" data-i="' + i + '">' +
     '<div class="tile">' + (v.cover ? '<img data-src="' + esc(coverUrl(v)) + '" alt="" referrerpolicy="no-referrer">' : '') +
     badge + step + '<span class="len">' + esc(lenLabel(v)) + '</span></div>' +
@@ -391,25 +427,25 @@ function renderHome() {
   var allDone = doneCount(pathItems) === pathItems.length;
   var html = '<section class="sec"><div class="metro" id="metro">' +
     '<div class="tile big" data-act="continue">' + (nu.cover ? '<img data-src="' + esc(lanMode ? coverUrl(nu) : nu.cover) + '" alt="" referrerpolicy="no-referrer">' : '') +
-      '<div class="shade"></div><span class="playbtn">▶</span><div class="txt"><span class="lbl">' + (allDone ? '路线全部看完了，再看一遍' : doneCount(pathItems) ? '继续闯关' : '从第 1 关开始') + '</span>' +
-      '<h2>' + esc(npi.note) + '</h2><p>第 ' + nst.no + ' 关 ' + esc(nst.name) + ' · 第 ' + npi.step + ' 步 · ' + esc(lenLabel(nu)) + '</p></div></div>';
+      '<div class="shade"></div><span class="playbtn">▶</span><div class="txt"><span class="lbl">' + (allDone ? t('tv.restartPath') : doneCount(pathItems) ? t('tv.continuePath') : t('tv.startPath')) + '</span>' +
+      '<h2>' + esc(npi.note) + '</h2><p>' + esc(t('tv.stageNo', {n: nst.no})) + ' ' + esc(nst.name) + ' · ' + esc(t('tv.step', {n: npi.step})) + ' · ' + esc(lenLabel(nu)) + '</p></div></div>';
   stages.forEach(function (st) {
     var n = doneCount(st.vids), all = st.vids.length;
     html += '<div class="tile stage' + (n === all && all ? ' all-done' : '') + (st.later ? ' later' : '') + '" data-stage="' + st.no + '" style="--h:' + st.hue + ';--h2:' + st.hue2 + '">' +
-      '<span class="no">第 ' + st.no + ' 关</span><div class="ic">' + esc(st.icon) + '</div><div class="nm">' + esc(st.name) + '</div>' +
+      '<span class="no">' + esc(t('tv.stageNo', {n: st.no})) + '</span><div class="ic">' + esc(st.icon) + '</div><div class="nm">' + esc(st.name) + '</div>' +
       '<div class="pg">' + n + ' / ' + all + '<span class="bar"><i style="width:' + (all ? Math.round(n / all * 100) : 0) + '%"></i></span></div></div>';
   });
-  html += '<div class="duo"><div class="tile dice" data-act="random"><span class="ic">🎲</span><span class="nm">随便看看</span></div>' +
-    '<div class="tile gear" data-act="settings"><span class="ic">⚙️</span><span class="nm">设置</span><i class="reddot" id="gear-dot"' + (upd.hasNew ? '' : ' hidden') + '></i></div></div>';
+  html += '<div class="duo"><div class="tile dice" data-act="random"><span class="ic">🎲</span><span class="nm">' + esc(t('tv.browse')) + '</span></div>' +
+    '<div class="tile gear" data-act="settings"><span class="ic">⚙️</span><span class="nm">' + esc(t('tv.settings')) + '</span><i class="reddot" id="gear-dot"' + (upd.hasNew ? '' : ' hidden') + '></i></div></div>';
   html += '</div></section>';
 
   var lists = [];
   stages.forEach(function (st) {
-    if (st.vids.length) lists.push({name: '第 ' + st.no + ' 关 · ' + st.name, sub: st.age, hue: st.hue, list: st.vids, path: true});
+    if (st.vids.length) lists.push({name: t('tv.stageNo', {n: st.no}) + ' · ' + st.name, sub: st.age, hue: st.hue, list: st.vids, path: true});
   });
   D.categories.forEach(function (c, ci) {
     var vs = D.videos.filter(function (v) { return !v.dead && v.category === c; });
-    if (vs.length) lists.push({name: c, sub: vs.length + ' 条', hue: HUES[(ci + 5) % 9], list: vs, path: false});
+    if (vs.length) lists.push({name: tc(c), sub: t('tv.countShort', {n: vs.length}), hue: HUES[(ci + 5) % 9], list: vs, path: false});
   });
   lists.forEach(function (L, li) {
     html += '<section class="sec" style="--h:' + L.hue + '"><h3 class="sec-h"><span class="dot"></span>' + esc(L.name) + '<small>' + esc(L.sub) + '</small></h3>' +
@@ -423,7 +459,7 @@ function renderHome() {
     var track = home.querySelector('[data-row="' + (li + 1) + '"]');
     rows.push({el: track, items: [].slice.call(track.querySelectorAll('.card')), list: L.list, name: L.name, path: L.path, x: 0});
   });
-  $('#prog').innerHTML = '成长路线 已看 <b>' + doneCount(pathItems) + '</b> / ' + pathItems.length;
+  $('#prog').innerHTML = t('cat.path') + ' ' + t('hero.watched', {d: '<b>' + doneCount(pathItems) + '</b>', n: pathItems.length});
   lazyImages(home);
   setFocus(Math.min(focus.r, rows.length - 1), focus.c, true);
 }
@@ -531,7 +567,7 @@ function homeKey(k) {
     var now = Date.now();
     if (now - lastBack < 2500) return 'exit';
     lastBack = now;
-    toast('再按一次返回键退出');
+    toast(t('tv.backAgain'));
   }
 }
 var lastBack = 0;
@@ -555,10 +591,10 @@ function showVideo(delay) {
   P.elapsed = 0; P.paused = false; P.marked = false;
   $('#player').classList.remove('is-paused');
   var pill = $('#p-pill');
-  if (P.path && st) { pill.textContent = st.icon + ' 第 ' + st.no + ' 关 · 第 ' + pi.step + ' 步'; pill.style.setProperty('--h', st.hue); }
+  if (P.path && st) { pill.textContent = st.icon + ' ' + t('tv.stageNo', {n: st.no}) + ' · ' + t('tv.step', {n: pi.step}); pill.style.setProperty('--h', st.hue); }
   else { pill.textContent = P.name; pill.style.setProperty('--h', '#2f86e0'); }
   $('#p-title').textContent = P.path && pi ? pi.note : v.title;
-  $('#p-who').textContent = (P.path && pi ? v.title + ' · ' : '') + who(v) + (v.orig ? '（搬运）' : '') + ' · ' + lenLabel(v) + (isDone(v.id) ? ' · ✓ 看过' : '');
+  $('#p-who').textContent = (P.path && pi ? v.title + ' · ' : '') + who(v) + (v.orig ? t('tv.repostParen') : '') + ' · ' + lenLabel(v) + (isDone(v.id) ? t('tv.seenSuffix') : '');
   $('#p-pos').textContent = (P.idx + 1) + ' / ' + P.list.length;
   wake(5000);
   // 连按 ◀ ▶ 时，中途经过的不加载播放器
@@ -591,7 +627,7 @@ function showVideo(delay) {
         if (!video.isConnected) return;
         if (info && info.error) { toast(info.error); return; }
         attachLanMedia(video, info, true);
-      }).catch(function () { if (video.isConnected) toast('暂时播不了，请稍后再试'); });
+      }).catch(function () { if (video.isConnected) toast(t('tv.playFail')); });
       return;
     }
     var f = document.createElement('iframe');
@@ -622,21 +658,21 @@ function secTick() {
   if (video && !isNaN(video.currentTime) && video.currentTime > 0) P.elapsed = video.currentTime;
   else P.elapsed++;
   if (!v.duration) return;
-  if (!P.marked && !isDone(v.id) && P.elapsed >= v.duration * 0.7) { P.marked = true; setDone(v.id, true); toast('✓ 记为看完了'); }
+  if (!P.marked && !isDone(v.id) && P.elapsed >= v.duration * 0.7) { P.marked = true; setDone(v.id, true); toast(t('tv.markedDone')); }
   if (isSeries(v) || (video ? (!(video.ended) && P.elapsed < v.duration + 8) : P.elapsed < v.duration + 8)) return;
   var nx = P.list[P.idx + 1];
-  if (!nx) { P.paused = true; toast('这个列表看完了，按返回回首页', 6000); return; }
+  if (!nx) { P.paused = true; toast(t('tv.listDone'), 6000); return; }
   if (P.path && stageOf(nx) !== stageOf(v)) {
     P.paused = true;
-    toast('🎉 第 ' + stageOf(v).no + ' 关看完了！休息一下，做做这一关的动手任务', 8000);
+    toast(t('tv.stageClear', {n: stageOf(v).no}), 8000);
     return;
   }
   go(1);
 }
 function go(d) {
   var i = P.idx + d;
-  if (i < 0) { toast('已经是第一条了'); return; }
-  if (i >= P.list.length) { toast('已经是最后一条了'); return; }
+  if (i < 0) { toast(t('toast.first')); return; }
+  if (i >= P.list.length) { toast(t('tv.lastItem')); return; }
   P.idx = i;
   showVideo(450);
 }
@@ -652,7 +688,7 @@ var strip = {open: false, c: 0, x: 0};
 function openStrip() {
   var track = $('#strip-track');
   $('#strip-name').textContent = P.name;
-  $('#strip-count').textContent = P.list.length + ' 条，看过 ' + doneCount(P.list) + ' 条';
+  $('#strip-count').textContent = t('sheet.count', {n: P.list.length, d: doneCount(P.list)});
   track.innerHTML = P.list.map(function (v, i) { return cardHTML(v, i, P.path); }).join('');
   lazyImages(track);
   strip.open = true;
@@ -700,7 +736,7 @@ function playerKey(k) {
     setDone(v.id, on);
     P.marked = true;
     var st = P.path && stageOf(v);
-    toast(on ? (st ? '✓ 看完了 · 第 ' + st.no + ' 关 ' + doneCount(st.vids) + ' / ' + st.vids.length : '✓ 记下了') : '已取消「看完了」');
+    toast(on ? (st ? t('tv.doneOn', {n: st.no, d: doneCount(st.vids), all: st.vids.length}) : t('tv.noted')) : t('tv.undone'));
     showInfoOnly();
     return;
   }
@@ -715,7 +751,7 @@ function playerKey(k) {
     }
     // 应用里由安卓那边往播放器里按一下空格；普通浏览器里做不到（跨域 iframe），只能提示
     if (IN_APP) { var f = $('#player iframe'); if (f) f.focus(); return 'space'; }
-    toast('请用播放器自己的按钮暂停');
+    toast(t('tv.usePlayerPause'));
     return;
   }
   if (k === 'back') {
@@ -741,7 +777,7 @@ function seek(dir) {
     seekAcc += dir * SEEK_STEP;
     clearTimeout(seekTimer);
     seekTimer = setTimeout(function () { seekAcc = 0; }, 1500);
-    toast((seekAcc >= 0 ? '⏩ 快进 ' : '⏪ 快退 ') + Math.abs(seekAcc) + ' 秒', 1200);
+    toast(seekAcc >= 0 ? t('tv.seekFwd', {n: Math.abs(seekAcc)}) : t('tv.seekBack', {n: Math.abs(seekAcc)}), 1200);
     return dir > 0 ? 'seek+' : 'seek-';
   }
   if (!$('#player iframe')) return;
@@ -749,13 +785,13 @@ function seek(dir) {
   clearTimeout(seekTimer);
   seekTimer = setTimeout(function () { seekAcc = 0; }, 1500);
   P.elapsed = Math.max(0, P.elapsed + dir * SEEK_STEP);
-  toast((seekAcc >= 0 ? '⏩ 快进 ' : '⏪ 快退 ') + Math.abs(seekAcc) + ' 秒', 1200);
+  toast(t(seekAcc >= 0 ? 'tv.seekFwd' : 'tv.seekBack', {n: Math.abs(seekAcc)}), 1200);
   $('#player iframe').focus();
   return dir > 0 ? 'seek+' : 'seek-';
 }
 function showInfoOnly() {
   var v = P.list[P.idx];
-  $('#p-who').textContent = $('#p-who').textContent.replace(/ · ✓ 看过$/, '') + (isDone(v.id) ? ' · ✓ 看过' : '');
+  $('#p-who').textContent = $('#p-who').textContent.replace(/ · ✓ (?:看过|Watched)$/, '') + (isDone(v.id) ? t('tv.seenSuffix') : '');
   wake();
 }
 // 从播放回来：焦点落在刚才看的那条上
@@ -789,15 +825,15 @@ function paintPick() {
   function tileHtml(c) {
     var on = c.id === current;
     if (on) focused = true;
-    return '<div class="tile stage' + (on ? ' f' : '') + '" data-track="' + c.id + '" style="--h:' + c.color + ';--h2:' + c.color2 + '"><span class="no">' + esc(c.ages) + '</span><div class="ic">' + c.icon + '</div><div class="nm">' + esc(c.title) + '</div></div>';
+    return '<div class="tile stage' + (on ? ' f' : '') + '" data-track="' + c.id + '" style="--h:' + c.color + ';--h2:' + c.color2 + '"><span class="no">' + esc(tf(c, 'ages')) + '</span><div class="ic">' + c.icon + '</div><div class="nm">' + esc(tf(c, 'title')) + '</div></div>';
   }
   stages.forEach(function (st) {
     known[st.id] = true;
     var items = list.filter(function (c) { return c.stage === st.id; });
     if (!items.length) return;
     html += '<div class="pick-stage">';
-    html += '<h2>' + esc(st.title) + ' <span>' + esc(st.ages) + '</span></h2>';
-    if (st.lede) html += '<p class="lede">' + esc(st.lede) + '</p>';
+    html += '<h2>' + esc(tf(st, 'title')) + ' <span>' + esc(tf(st, 'ages')) + '</span></h2>';
+    if (st.lede || st.ledeEn) html += '<p class="lede">' + esc(tf(st, 'lede')) + '</p>';
     html += '<div class="pick-row">';
     items.forEach(function (c) { html += tileHtml(c); });
     html += '</div></div>';
@@ -818,6 +854,7 @@ function showPick(fromSettings) {
   picking = true;
   pickFromSettings = !!fromSettings;
   paintPick();
+  paintPickChrome();
   $('#msg').hidden = true;
   $('#pick').hidden = false;
 }
@@ -895,37 +932,37 @@ function paintIdle() {
   var m = upd.latest;
   if (APP) {
     var cur = 'v' + APP.versionName();
-    if (upd.hasNew) paintUpd('更新到 ' + m.versionName, '现在是 ' + cur + (m.notes ? ' · 新版：' + m.notes : '') + ' · 按 OK 更新');
-    else paintUpd('检查更新', '现在是 ' + cur + ' · 按 OK 检查');
+    if (upd.hasNew) paintUpd(t('tv.updTo', {name: m.versionName}), t('tv.updNow', {cur: cur}) + (m.notes ? ' · ' + t('tv.updNotes', {notes: m.notes}) : '') + ' · ' + t('tv.updPress'));
+    else paintUpd(t('tv.updCheck'), t('tv.updNow', {cur: cur}) + ' · ' + t('tv.updPressCheck'));
   } else if (IN_APP) {  // 1.0 / 1.1：还没有一键更新
-    paintUpd(m ? '有新版应用 ' + m.versionName : '应用更新', '这一版不能一键更新：用 U 盘或 adb 装一次新版（' + APK_URL + '），之后就能在这里一键更新');
+    paintUpd(m ? t('tv.updHasApp', {name: m.versionName}) : t('tv.updApp'), t('tv.updManual', {url: APK_URL}));
   } else {  // 普通浏览器
-    paintUpd('安卓电视 / 投影仪应用', '下载 ' + APK_URL + '，用 U 盘装上：遥控器更顺手，OK 能暂停，◀ ▶ 能快进');
+    paintUpd(t('tv.updApk'), t('tv.updApkHint', {url: APK_URL}));
   }
   var bp = window.BP || {};
-  var who = bp.mode === 'cloud' && bp.profile ? ('当前孩子：' + bp.profile.display_name) : '还没登录，进度在这台设备上';
+  var who = bp.mode === 'cloud' && bp.profile ? t('tv.currentChildName', {name: bp.profile.display_name}) : t('tv.guestProgress');
   var course = '';
   var list = bp.catalog || (window.BiliPicksAccount && window.BiliPicksAccount.courseList()) || [];
   var ci;
-  for (ci = 0; ci < list.length; ci++) if (list[ci].id === bp.track) course = list[ci].title;
+  for (ci = 0; ci < list.length; ci++) if (list[ci].id === bp.track) course = tf(list[ci], 'title');
   paintKids(bp);
   var manageNote = $('#p-manage-note');
   if (manageNote) manageNote.hidden = !(bp.mode === 'cloud' && bp.profile);
-  $('#p-note').textContent = [course, who, '视频清单在网站上更新，不用重装应用', 'BiliPicks 不是 B 站官方产品'].filter(Boolean).join(' · ');
+  $('#p-note').textContent = [course, who, t('tv.noteCatalog'), t('tv.noteUnofficial')].filter(Boolean).join(' · ');
   var acc = $('#p-acc-s');
   var accT = $('#p-acc-t');
-  if (accT) accT.textContent = bp.mode === 'cloud' ? '孩子档案' : '家长账号';
+  if (accT) accT.textContent = bp.mode === 'cloud' ? t('tv.profiles') : t('tv.parentAccount');
   if (acc) {
     if (bp.mode === 'cloud' && bp.profile) {
       var mine = profileCourseText(bp, bp.profile);
-      acc.textContent = '当前是「' + bp.profile.display_name + '」' + (mine ? ' · ' + mine : '') + '。按 OK 换人或退出';
-    } else if (!bp.configured) acc.textContent = '云端登录还没配置（公开站用 config.public.js，本机 config.js 可覆盖），现在是访客';
-    else acc.textContent = '按 OK 填写家长邮箱';
+      acc.textContent = t('tv.currentChild', {name: bp.profile.display_name}) + (mine ? ' · ' + mine : '') + ' · ' + t('tv.pressOkSwitch');
+    } else if (!bp.configured) acc.textContent = t('tv.unconfigured');
+    else acc.textContent = t('tv.pressOkEmail');
   }
   var tr = $('#p-track-s');
-  if (tr) tr.textContent = course ? ('现在是「' + course + '」。按 OK 换一门，其他课的进度还在') : '按 OK 选一门课';
+  if (tr) tr.textContent = course ? t('tv.switchHintOn', {name: course}) : t('tv.switchHintOff');
   var tt = $('#p-track-t');
-  if (tt) tt.textContent = '换一门课';
+  if (tt) tt.textContent = t('tv.switchCourse');
 }
 function profileCourseText(bp, p) {
   var ids = (p.courses && p.courses.length) ? p.courses : (p.track ? [p.track] : []);
@@ -934,10 +971,10 @@ function profileCourseText(bp, p) {
   var i, j, title;
   for (i = 0; i < ids.length; i++) {
     title = '';
-    for (j = 0; j < catalog.length; j++) if (catalog[j].id === ids[i]) title = catalog[j].title;
+    for (j = 0; j < catalog.length; j++) if (catalog[j].id === ids[i]) title = tf(catalog[j], 'title');
     if (title) names.push(title);
   }
-  return names.join('、');
+  return names.join(t('list.join'));
 }
 function paintKids(bp) {
   var box = $('#tv-kids');
@@ -949,9 +986,9 @@ function paintKids(bp) {
       p = bp.profiles[i];
       current = bp.profile && bp.profile.id === p.id;
       courses = profileCourseText(bp, p);
-      html += '<div class="tile pitem tv-kid' + (current ? ' on-kid' : '') + '" hidden data-profile="' + esc(p.id) + '"><b>' + esc(p.display_name) + (current ? ' · 当前' : '') + '</b><small>' + esc(courses || '还没选课') + '</small></div>';
+      html += '<div class="tile pitem tv-kid' + (current ? ' on-kid' : '') + '" hidden data-profile="' + esc(p.id) + '"><b>' + esc(p.display_name) + (current ? ' · ' + t('tv.current') : '') + '</b><small>' + esc(courses || t('account.noCourse')) + '</small></div>';
     }
-    html += '<div class="tile pitem" id="p-signout" hidden><b>退出登录</b><small>' + esc((bp.user && bp.user.email) || '') + '</small></div>';
+    html += '<div class="tile pitem" id="p-signout" hidden><b>' + esc(t('tv.signOut')) + '</b><small>' + esc((bp.user && bp.user.email) || '') + '</small></div>';
   }
   box.innerHTML = html;
 }
@@ -977,7 +1014,9 @@ function checkUpd() {
 }
 function openPanel() {
   panelOpen = true;
+  paintChrome();
   if (!upd.busy) paintIdle();
+  paintLangSwitch();
   $('#panel').hidden = false;
 }
 function closePanel() { panelOpen = false; $('#panel').hidden = true; }
@@ -997,6 +1036,10 @@ function panelKey(k) {
   if (k !== 'ok' && k !== 'left' && k !== 'right') return;
   var cur = $('#panel .pitem.f') || panelItems()[0];
   if (!cur) return;
+  if (cur.getAttribute && cur.getAttribute('data-lang') && k === 'ok' && window.BiliPicksI18n) {
+    BiliPicksI18n.setLang(cur.getAttribute('data-lang'));
+    return;
+  }
   if (cur.id === 'p-track' && k === 'ok' && window.BP) {
     closePanel();
     showPick(true);
@@ -1015,7 +1058,7 @@ function panelKey(k) {
       setKids(!kidsOpen());
       return;
     }
-    if (!window.BP.configured) { toast(window.BP.offline ? '刚才没连上云端' : '云端登录还没配置。公开站用 config.public.js，本机 config.js 可覆盖'); return; }
+    if (!window.BP.configured) { toast(window.BP.offline ? t('tv.offlineShort') : t('tv.unconfigured')); return; }
     var box = $('#tv-auth');
     var login = $('#p-login');
     box.hidden = false;
@@ -1028,9 +1071,9 @@ function panelKey(k) {
     var password = $('#tv-pass').value;
     var job = k === 'right' ? window.BP.signUp(email, password) : window.BP.signIn(email, password);
     job.then(function (res) {
-      if (!res.ok) { toast(res.error || '没有完成', 5000); return; }
-      if (res.confirm) { toast('请到邮箱里确认，然后再登录', 6000); return; }
-      if (res.needsProfile) { toast('先在网页上给孩子起个称呼', 5000); return; }
+      if (!res.ok) { toast(res.error || t('err.failed'), 5000); return; }
+      if (res.confirm) { toast(t('toast.confirmEmail'), 6000); return; }
+      if (res.needsProfile) { toast(t('tv.needNickname'), 5000); return; }
       var track = (res.profile && res.profile.track) || window.BP.track || 'jh';
       window.BP.setTrack(track);
     });
@@ -1038,36 +1081,100 @@ function panelKey(k) {
   }
   if (k !== 'ok') return;
   if (APP) { doUpdate(); return; }
-  toast(IN_APP ? '这一版要先用 U 盘或 adb 装一次新版' : '在电视上装 BiliPicks 应用才能用', 5000);
+  toast(IN_APP ? t('tv.needUsb') : t('tv.needApp'), 5000);
 }
 function doUpdate() {
   if (!APP || upd.busy) return;
   upd.busy = true;
-  paintUpd('正在检查…');
+  paintUpd(t('tv.updChecking'));
   APP.update();
 }
 window.tvUpdateState = function (st, arg) {
-  if (st === 'checking') paintUpd('正在检查…');
-  else if (st === 'download') paintUpd('正在下载 ' + arg + '%');
-  else if (st === 'verify') paintUpd('正在校验…');
+  if (st === 'checking') paintUpd(t('tv.updChecking'));
+  else if (st === 'download') paintUpd(t('tv.updDownload', {n: arg}));
+  else if (st === 'verify') paintUpd(t('tv.updVerify'));
   else if (st === 'install') {
     upd.busy = false;
-    paintUpd('在弹出的窗口里选「安装」', '装好后如果回到了桌面，再打开一次 BiliPicks 就是新版');
+    paintUpd(t('tv.updInstall'), t('tv.updInstallHint'));
     // 有的电视（比如极米）不让应用装完自己重新打开，提前说一声
-    toast('装好后如果回到了桌面，再打开一次 BiliPicks 就是新版', 8000);
-  } else if (st === 'latest') { upd.busy = false; setDot(false); paintUpd('已经是最新版', 'v' + arg); toast('已经是最新版了'); }
+    toast(t('tv.updInstallHint'), 8000);
+  } else if (st === 'latest') { upd.busy = false; setDot(false); paintUpd(t('tv.updLatest'), 'v' + arg); toast(t('tv.updLatestToast')); }
   else if (st === 'permission') {
     upd.busy = false;
-    paintUpd('先允许安装，再按 OK', '请在打开的设置里允许 BiliPicks「安装未知应用」，然后回来再按一次');
-    toast('请在设置里允许 BiliPicks「安装未知应用」，然后回来再按一次', 7000);
-  } else if (st === 'error') { upd.busy = false; paintUpd('更新没成功 · 按 OK 重试', arg); toast(arg, 7000); }
+    paintUpd(t('tv.updAllow'), t('tv.updAllowHint'));
+    toast(t('tv.updAllowHint'), 7000);
+  } else if (st === 'error') { upd.busy = false; paintUpd(t('tv.updFail'), arg); toast(arg, 7000); }
 };
+
+
+function paintLangSwitch() {
+  var lang = window.BiliPicksI18n ? BiliPicksI18n.lang() : 'zh';
+  var zh = $('#p-lang-zh'), en = $('#p-lang-en');
+  if (zh) { if (lang === 'zh') zh.classList.add('on'); else zh.classList.remove('on'); }
+  if (en) { if (lang === 'en') en.classList.add('on'); else en.classList.remove('on'); }
+}
+function paintPickChrome() {
+  var h = document.querySelector('#pick h1');
+  if (h) h.textContent = t('tv.pickTitle');
+  var lead = $('.pick-lead');
+  if (lead) lead.textContent = t('tv.pickLead');
+}
+function paintChrome() {
+  document.title = 'BiliPicks ' + t('tv.sub');
+  var msg = $('#msg');
+  if (msg && !D && msg.hidden === false && msg.textContent.indexOf('BiliPicks') === 0) {
+    /* leave error/load as-is unless still the first loading text; startTv hides it */
+  }
+  var loading = $('#msg');
+  paintPickChrome();
+  var panelH = document.querySelector('#panel h2');
+  if (panelH) panelH.textContent = t('tv.settings');
+  var mn = $('#p-manage-note');
+  if (mn) mn.textContent = t('tv.manageNote');
+  var authNote = document.querySelector('#tv-auth .pnote');
+  if (authNote) authNote.textContent = t('tv.authNote');
+  var em = $('#tv-email');
+  if (em) em.setAttribute('placeholder', t('tv.emailPh'));
+  var pw = $('#tv-pass');
+  if (pw) pw.setAttribute('placeholder', t('tv.passPh'));
+  var loginT = $('#p-login-t');
+  if (loginT) loginT.textContent = t('action.signIn');
+  var loginSmall = document.querySelector('#p-login small');
+  if (loginSmall) loginSmall.textContent = t('tv.loginHint');
+  var hint = $('.phint');
+  if (hint) hint.textContent = t('tv.panelHint');
+  var paused = $('.paused');
+  if (paused) paused.textContent = t('tv.paused');
+  var mark = document.querySelector('.keys span:nth-child(2)');
+  /* keys row: set static labels around kbd */
+  var keySpans = document.querySelectorAll('.keys > span');
+  if (keySpans.length >= 5) {
+    /* 0: k-lr already, 1: OK + pause, 2: mark, 3: k-down, 4: back */
+    keySpans[1].innerHTML = '<kbd>OK</kbd>' + esc(t('tv.pauseContinue'));
+    keySpans[2].innerHTML = '<kbd>▲</kbd>' + esc(t('tv.markDoneKey'));
+    keySpans[4].innerHTML = '<kbd>' + esc(t('tv.backKey')) + '</kbd>' + esc(t('tv.backHome'));
+  }
+  paintSeekHint();
+  paintLangSwitch();
+  var courseName = currentCourseTitle() || (D && D.path && D.path.title) || '';
+  var sub = $('#sub');
+  if (sub) sub.textContent = (courseName ? courseName + ' · ' : '') + t('tv.sub');
+}
+function applyLang() {
+  applyPathLang();
+  paintChrome();
+  if (D) renderHome();
+  if (typeof picking !== 'undefined' && picking) paintPick();
+  if (typeof panelOpen !== 'undefined' && panelOpen && !(upd && upd.busy)) paintIdle();
+}
+if (window.BiliPicksI18n && BiliPicksI18n.onChange) BiliPicksI18n.onChange(applyLang);
 
 // ---------- 启动 ----------
 tick();
 setInterval(tick, 15000);
 function paintSeekHint() {
-  if (CAN_SEEK) { $('#k-lr').textContent = '快退 / 快进'; $('#k-down').textContent = '选集 · 换一条'; }
+  if (CAN_SEEK) { $('#k-lr').textContent = t('tv.seek'); $('#k-down').textContent = t('tv.selectOrSwitch'); }
+  else { $('#k-lr').textContent = t('tv.prevNext'); $('#k-down').textContent = t('tv.pickList'); }
 }
 paintSeekHint();
 function startTv(dataPromise) {
@@ -1081,8 +1188,10 @@ function startTv(dataPromise) {
     return loadHls().catch(function () {}).then(function () { return data; });
   }).then(function (data) {
     prepare(data);
-    var courseName = (window.BP && window.BP.label) || ((D.path && D.path.title) || '');
-    $('#sub').textContent = (courseName ? courseName + ' · ' : '') + '电视版';
+    applyPathLang();
+    var courseName = currentCourseTitle() || ((D.path && D.path.title) || '');
+    $('#sub').textContent = (courseName ? courseName + ' · ' : '') + t('tv.sub');
+    paintChrome();
     $('#msg').hidden = true;
     renderHome();
     checkUpd();
@@ -1104,7 +1213,7 @@ BiliPicksAccount.open().then(function (bp) {
   return startTv(ready);
 }).catch(function () {
   $('#msg').hidden = false;
-  $('#msg').innerHTML = '<b>没加载出来</b>检查一下网络，按 OK 重试';
+  $('#msg').innerHTML = '<b>' + esc(t('tv.loadFail')) + '</b>' + esc(t('tv.loadFailHint'));
   window.tvKey = function (k) { if (k === 'ok') location.reload(); return k === 'back' ? 'exit' : ''; };
 });
 </script>

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-Hans">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -16,7 +16,8 @@
   if(theme!=='dark'&&theme!=='light'&&(tr==='g1'||tr==='jh'))theme=localStorage.getItem(tr==='g1'?'bilipicks-g1-theme':'bilipicks-jh-theme');
   if(theme==='dark')document.documentElement.classList.add('dark');
 }catch(e){}
-try{var _ua=navigator.userAgent||'';if(/iPad/.test(_ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(hover: none) and (pointer: coarse)').matches)document.documentElement.classList.add('handheld')}catch(e){}</script>
+try{var _ua=navigator.userAgent||'';if(/iPad/.test(_ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)||matchMedia('(hover: none) and (pointer: coarse)').matches)document.documentElement.classList.add('handheld')}catch(e){}
+try{var _lang=localStorage.getItem('bilipicks-lang');if(_lang!=='zh'&&_lang!=='en'){var _n=(navigator.language||navigator.userLanguage||'zh').toLowerCase();_lang=_n.indexOf('zh')===0?'zh':'en'}document.documentElement.lang=_lang==='en'?'en':'zh-Hans';document.documentElement.setAttribute('data-lang',_lang)}catch(e){}</script>
 <style>
 *{box-sizing:border-box}
 :root{
@@ -84,6 +85,10 @@ body.bars-hidden .top{transform:translateY(-100%)}
 .nav button.on{background:var(--soft);color:var(--ink)}
 .nav-tv{display:flex;align-items:center;padding:8px 14px;border-radius:999px;color:var(--muted);font-weight:700;margin-left:2px}
 .nav-tv:hover{color:var(--ink)}
+.lang-switch{display:flex;align-items:center;gap:6px;flex:none;margin-left:8px;font-size:13px;font-weight:800;color:var(--muted)}
+.lang-switch button{border:0;background:none;padding:4px 2px;font:inherit;font-weight:800;color:var(--muted);cursor:pointer}
+.lang-switch button[aria-pressed="true"]{color:var(--ink)}
+.lang-switch .sep{opacity:.4;font-weight:600}
 .search{flex:1;max-width:420px;margin-left:auto;position:relative;display:flex;align-items:center}
 .search svg{position:absolute;left:12px;width:18px;height:18px;color:var(--muted);pointer-events:none}
 .search input{width:100%;height:40px;border-radius:999px;border:1px solid var(--line);background:var(--bg);padding:0 14px 0 38px;outline:none;min-width:0}
@@ -578,47 +583,52 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
 </head>
 <body>
 <header class="top" id="top">
-  <a class="logo" href="./" id="logo" aria-label="BiliPicks 首页"><span class="mark">▶</span><span class="logo-t">BiliPicks</span></a>
-  <nav class="nav" id="nav" aria-label="主导航"></nav>
+  <a class="logo" href="./" id="logo" aria-label="BiliPicks 首页" data-i18n-aria="logo.home"><span class="mark">▶</span><span class="logo-t">BiliPicks</span></a>
+  <nav class="nav" id="nav" aria-label="主导航" data-i18n-aria="nav.main"></nav>
   <label class="search">
     <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-    <input id="search" type="search" placeholder="搜视频、UP 主、分类" aria-label="搜索" enterkeyhint="search">
+    <input id="search" type="search" placeholder="搜视频、UP 主、分类" aria-label="搜索" data-i18n-placeholder="search.placeholder" data-i18n-aria="search.aria" enterkeyhint="search">
   </label>
   <div class="track-wrap">
-    <button type="button" class="btn sm" id="btn-track" hidden>选课</button>
+    <button type="button" class="btn sm" id="btn-track" hidden data-i18n="action.pickCourse">选课</button>
     <div class="pop" id="track-menu" hidden>
-      <p>换一门课不会清掉其他课已经看过的记录。</p>
+      <p data-i18n="track.menuLead">换一门课不会清掉其他课已经看过的记录。</p>
       <div id="track-menu-list"></div>
     </div>
   </div>
-  <button type="button" class="btn sm" id="btn-account">登录</button>
+  <div class="lang-switch" role="group" data-i18n-aria="lang.aria" aria-label="语言">
+    <button type="button" id="lang-zh" data-lang="zh" aria-pressed="true">中文</button>
+    <span class="sep" aria-hidden="true">|</span>
+    <button type="button" id="lang-en" data-lang="en" aria-pressed="false">English</button>
+  </div>
+  <button type="button" class="btn sm" id="btn-account" data-i18n="action.signIn">登录</button>
   <button type="button" class="icon-btn" id="btn-theme"></button>
 </header>
 
-<div class="gate" id="boot-cover"><div class="gate-card"><h1>BiliPicks</h1><p class="gate-lead">正在打开…</p></div></div>
+<div class="gate" id="boot-cover"><div class="gate-card"><h1>BiliPicks</h1><p class="gate-lead" data-i18n="boot.loading">正在打开…</p></div></div>
 <div class="gate" id="gate" hidden>
   <div class="gate-card">
     <a class="logo" href="./" aria-label="BiliPicks"><span class="mark">▶</span><span>BiliPicks</span></a>
-    <h1>课程中心</h1>
-    <p class="gate-lead">按孩子现在的年纪挑一门课。家长看着选；每门课的进度分开留着。</p>
+    <h1 data-i18n="gate.title">课程中心</h1>
+    <p class="gate-lead" data-i18n="gate.lead">按孩子现在的年纪挑一门课。家长看着选；每门课的进度分开留着。</p>
     <div class="field" id="gate-name-field" hidden>
-      <span>这个孩子在家里怎么叫</span>
-      <input id="gate-name" maxlength="24" autocomplete="off" placeholder="比如：姐姐、弟弟。不是姓名">
+      <span data-i18n="gate.nickname">这个孩子在家里怎么叫</span>
+      <input id="gate-name" maxlength="24" autocomplete="off" placeholder="比如：姐姐、弟弟。不是姓名" data-i18n-placeholder="gate.nicknamePh">
     </div>
     <div class="choices" id="gate-choices"></div>
     <p class="err" id="gate-err" hidden></p>
     <div class="gate-actions">
-      <button type="button" class="btn primary" id="gate-go" hidden>用这些课开始</button>
-      <button type="button" class="btn" id="gate-login">家长登录 / 注册</button>
+      <button type="button" class="btn primary" id="gate-go" hidden data-i18n="gate.start">用这些课开始</button>
+      <button type="button" class="btn" id="gate-login" data-i18n="gate.login">家长登录 / 注册</button>
     </div>
-    <p class="gate-foot">两岁前除了视频通话，宜尽量少看屏幕。任何年纪都请家长一起挑、一起看。</p>
+    <p class="gate-foot" data-i18n="gate.foot">两岁前除了视频通话，宜尽量少看屏幕。任何年纪都请家长一起挑、一起看。</p>
   </div>
 </div>
 
 <main>
   <section id="view-home">
     <div class="hero" id="hero"></div>
-    <div class="chips" id="chips" role="tablist" aria-label="分类"></div>
+    <div class="chips" id="chips" role="tablist" aria-label="分类" data-i18n-aria="chips.aria"></div>
     <p class="result" id="result"></p>
     <div class="grid" id="grid"></div>
   </section>
@@ -629,67 +639,67 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
 
   <section id="view-about" hidden>
     <div class="page prose">
-      <h1>为什么做 BiliPicks</h1>
-      <p>算法推荐很容易把孩子（和大人）带偏。这份清单是<strong id="about-curator"></strong>给<strong id="about-audience"></strong>的孩子手选的 B 站入口。<span id="about-aim"></span>目标不是「无限刷」，而是<strong>点开就看、看完就停</strong>。</p>
+      <h1 data-i18n="about.title">为什么做 BiliPicks</h1>
+      <p id="about-intro">算法推荐很容易把孩子（和大人）带偏。这份清单是<strong id="about-curator"></strong>给<strong id="about-audience"></strong>的孩子手选的 B 站入口。<span id="about-aim"></span>目标不是「无限刷」，而是<strong>点开就看、看完就停</strong>。</p>
       <div class="kpis" id="about-kpis"></div>
-      <h2 class="sec">怎么用</h2>
+      <h2 class="sec" data-i18n="about.how">怎么用</h2>
       <ul>
-        <li><strong>这门课</strong>：<span id="about-route"></span></li>
-        <li><strong>播放</strong>：一屏一条视频，滑到哪条就播哪条。不想自动播，点顶上的「自动播放」关掉，之后要点封面才播。<span class="pages-only">播放器是 B 站官方的站外播放器，没有改动。</span><span class="lan-only" hidden>这一份发现了同站的播放代理，所以用页面自己的播放器，不打开 B 站。</span></li>
-        <li><strong>看完了</strong>：看完一条点「✓ 看完了」，路线会记进度。</li>
-        <li class="pages-only"><strong>去 B 站看高清</strong>：B 站限制站外播放器最高 480P，点「看完了」旁边这个按钮到 B 站播放，登录后可看 1080P。</li>
-        <li><strong>深色模式</strong>：右上角的月亮。</li>
+        <li><strong data-i18n="about.thisCourse">这门课</strong>：<span id="about-route"></span></li>
+        <li><strong data-i18n="about.play">播放</strong>：<span data-i18n="about.playBody">一屏一条视频，滑到哪条就播哪条。不想自动播，点顶上的「自动播放」关掉，之后要点封面才播。</span> <span class="pages-only" data-i18n="about.playPages">播放器是 B 站官方的站外播放器，没有改动。</span><span class="lan-only" hidden data-i18n="about.playLan">这一份发现了同站的播放代理，所以用页面自己的播放器，不打开 B 站。</span></li>
+        <li><strong data-i18n="about.done">看完了</strong>：<span data-i18n="about.doneBody">看完一条点「✓ 看完了」，路线会记进度。</span></li>
+        <li class="pages-only"><strong data-i18n="about.hd">去 B 站看高清</strong>：<span data-i18n="about.hdBody">B 站限制站外播放器最高 480P，点「看完了」旁边这个按钮到 B 站播放，登录后可看 1080P。</span></li>
+        <li><strong data-i18n="about.dark">深色模式</strong>：<span data-i18n="about.darkBody">右上角的月亮。</span></li>
       </ul>
-      <h2 class="sec">不同设备上</h2>
+      <h2 class="sec" data-i18n="about.devices">不同设备上</h2>
       <ul>
-        <li><strong>电脑</strong>：用滚轮，或者按 <kbd>J</kbd> <kbd>K</kbd> 切换上一条下一条，切过去就自动带声音播放。快捷键：<kbd>A</kbd> 开关自动播放，<kbd>L</kbd> 播放列表，<span class="pages-only"><kbd>H</kbd> 去 B 站看高清，</span><kbd>D</kbd> 深色模式。</li>
-        <li class="pages-only"><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好。iPhone、iPad 上要点一下画面才出声播放，这是苹果不允许网页自动开声音，本页改不了。手机横过来，视频在左边，说明在右边。</li>
-        <li class="lan-only" hidden><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。如果没有自动开播，点一下画面即可。手机横过来，视频在左边，说明在右边。</li>
-        <li class="pages-only"><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的「屏幕镜像」，不要用视频右下角的隔空播放或「只投这个视频」（那样电视通常只有声音）：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</li>
-        <li class="lan-only" hidden><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的「屏幕镜像」，不要用视频右下角的隔空播放或「只投这个视频」（那样电视通常只有声音）：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。镜像时手机要一直开着这一页。</li>
-        <li><strong>电视、投影仪</strong>：用遥控器的打开<a href="tv.html"><strong>电视版</strong></a>：一格一格的方块，方向键挑、<kbd>OK</kbd> 播放；播放时 <kbd>▲</kbd> 标记看完，<kbd>▼</kbd> 选集、换一条，返回键回首页；<kbd>◀</kbd> <kbd>▶</kbd> 在应用里是快退 / 快进，在浏览器里是换上一条 / 下一条。看完的进度和这里共用。安卓电视、投影仪可以装 BiliPicks 电视版应用（安装方法见<a href="https://github.com/limin112/bilipicks/tree/main/android" target="_blank" rel="noopener noreferrer">开源仓库</a>），打开就是电视版，<kbd>OK</kbd> 键能暂停，<kbd>◀</kbd> <kbd>▶</kbd> 能快退快进。</li>
-        <li><strong>电脑接电视、投屏</strong>：在电脑上按 <kbd>T</kbd> 或点「大屏模式」，只留视频和一条控制栏，<kbd>←</kbd> <kbd>→</kbd> 切换，<kbd>Esc</kbd> 退出。电脑上的大屏模式不会强行进入浏览器全屏。</li>
-        <li><strong>换设备</strong>：<span id="about-sync"></span></li>
+        <li><strong data-i18n="about.computer">电脑</strong>：<span data-i18n-html="about.computerHtml">用滚轮，或者按 <kbd>J</kbd> <kbd>K</kbd> 切换上一条下一条，切过去就自动带声音播放。快捷键：<kbd>A</kbd> 开关自动播放，<kbd>L</kbd> 播放列表，<span class="pages-only"><kbd>H</kbd> 去 B 站看高清，</span><kbd>D</kbd> 深色模式。</span></li>
+        <li class="pages-only"><strong data-i18n="about.phone">手机、平板</strong>：<span data-i18n="about.phonePages">往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好。iPhone、iPad 上要点一下画面才出声播放，这是苹果不允许网页自动开声音，本页改不了。手机横过来，视频在左边，说明在右边。</span></li>
+        <li class="lan-only" hidden><strong data-i18n="about.phone">手机、平板</strong>：<span data-i18n="about.phoneLan">往上滑是下一条，往下滑是上一条。如果没有自动开播，点一下画面即可。手机横过来，视频在左边，说明在右边。</span></li>
+        <li class="pages-only"><strong data-i18n="about.castPhone">手机投到电视</strong>：<span data-i18n-html="about.castPages">播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的「屏幕镜像」，不要用视频右下角的隔空播放或「只投这个视频」（那样电视通常只有声音）：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</span></li>
+        <li class="lan-only" hidden><strong data-i18n="about.castPhone">手机投到电视</strong>：<span data-i18n-html="about.castLan">播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的「屏幕镜像」，不要用视频右下角的隔空播放或「只投这个视频」（那样电视通常只有声音）：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。镜像时手机要一直开着这一页。</span></li>
+        <li><strong data-i18n="about.tvProj">电视、投影仪</strong>：<span data-i18n-html="about.tvHtml">用遥控器的打开<a href="tv.html"><strong>电视版</strong></a>：一格一格的方块，方向键挑、<kbd>OK</kbd> 播放；播放时 <kbd>▲</kbd> 标记看完，<kbd>▼</kbd> 选集、换一条，返回键回首页；<kbd>◀</kbd> <kbd>▶</kbd> 在应用里是快退 / 快进，在浏览器里是换上一条 / 下一条。看完的进度和这里共用。安卓电视、投影仪可以装 BiliPicks 电视版应用（安装方法见<a href="https://github.com/limin112/bilipicks/tree/main/android" target="_blank" rel="noopener noreferrer">开源仓库</a>），打开就是电视版，<kbd>OK</kbd> 键能暂停，<kbd>◀</kbd> <kbd>▶</kbd> 能快退快进。</span></li>
+        <li><strong data-i18n="about.computerTv">电脑接电视、投屏</strong>：<span data-i18n-html="about.computerTvHtml">在电脑上按 <kbd>T</kbd> 或点「大屏模式」，只留视频和一条控制栏，<kbd>←</kbd> <kbd>→</kbd> 切换，<kbd>Esc</kbd> 退出。电脑上的大屏模式不会强行进入浏览器全屏。</span></li>
+        <li><strong data-i18n="about.switchDevice">换设备</strong>：<span id="about-sync"></span></li>
       </ul>
-      <h2 class="sec">关于搬运的视频</h2>
+      <h2 class="sec" data-i18n="about.reposts">关于搬运的视频</h2>
       <p id="about-repost"></p>
-      <h2 class="sec">使用前请知道</h2>
-      <p>这不是逐片审过的儿童白名单：视频按标题、简介、UP 主和口碑挑选，没有每一条都从头看到尾。年龄是编辑建议，不是官方分级。商单、猎奇标题、实验危险画面仍需家长挑选。<span class="pages-only">点「去 B 站看高清」之后会出现 B 站自己的推荐，建议关掉自动连播。</span><span class="lan-only" hidden>开了家里的播放代理时，视频在本站域名下播放。</span></p>
+      <h2 class="sec" data-i18n="about.before">使用前请知道</h2>
+      <p data-i18n-html="about.beforeHtml">这不是逐片审过的儿童白名单：视频按标题、简介、UP 主和口碑挑选，没有每一条都从头看到尾。年龄是编辑建议，不是官方分级。商单、猎奇标题、实验危险画面仍需家长挑选。<span class="pages-only">点「去 B 站看高清」之后会出现 B 站自己的推荐，建议关掉自动连播。</span><span class="lan-only" hidden>开了家里的播放代理时，视频在本站域名下播放。</span></p>
       <p id="about-tasks"></p>
-      <h2 class="sec">没放进来的</h2>
-      <p>低龄营销向动画、法律/职场/战争黑色幽默、地缘政治、志怪恐怖（含名字像儿童故事的）、纯数码评测、来源不明的同名杂号、标题写着「全 500 集」「学完就业」的卖课合集，都不收。</p>
-      <h2 class="sec">更新记录</h2>
+      <h2 class="sec" data-i18n="about.leftOut">没放进来的</h2>
+      <p data-i18n="about.leftOutBody">低龄营销向动画、法律/职场/战争黑色幽默、地缘政治、志怪恐怖（含名字像儿童故事的）、纯数码评测、来源不明的同名杂号、标题写着「全 500 集」「学完就业」的卖课合集，都不收。</p>
+      <h2 class="sec" data-i18n="about.log">更新记录</h2>
       <p id="about-log"></p>
-      <p>目录思路参考 <a href="https://karpathy.ai/tristan-tube/" target="_blank" rel="noopener noreferrer">TristanTube</a>：人来挑，不靠推荐。本站不是 B 站官方产品。</p>
+      <p id="about-tristan">目录思路参考 <a href="https://karpathy.ai/tristan-tube/" target="_blank" rel="noopener noreferrer">TristanTube</a>：人来挑，不靠推荐。本站不是 B 站官方产品。</p>
       <p id="about-credit"></p>
-      <p>本站改编自实践哥 Li 的 MIT 开源项目 <a href="https://github.com/limin112/bilipicks" target="_blank" rel="noopener noreferrer">limin112/bilipicks</a>，不是原作者的官方站点。原项目也可以复制一份改成你自己的清单：改 <code>data.js</code> 就行。</p>
+      <p id="about-adapt">本站改编自实践哥 Li 的 MIT 开源项目 <a href="https://github.com/limin112/bilipicks" target="_blank" rel="noopener noreferrer">limin112/bilipicks</a>，不是原作者的官方站点。原项目也可以复制一份改成你自己的清单：改 <code>data.js</code> 就行。</p>
     </div>
   </section>
 
   <section class="watch" id="view-watch" hidden>
     <div class="feed-top">
-      <button type="button" class="icon-btn" id="feed-back" aria-label="返回">
+      <button type="button" class="icon-btn" id="feed-back" aria-label="返回" data-i18n-aria="action.back">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
       </button>
       <div class="feed-ctx"><b id="feed-name"></b><span id="feed-pos"></span></div>
-      <button type="button" class="btn sm wide-only" id="btn-prev" title="快捷键 K">上一条</button>
-      <button type="button" class="btn sm wide-only" id="btn-next" title="快捷键 J">下一条</button>
-      <button type="button" class="btn sm auto-btn" id="btn-auto" aria-pressed="true">自动播放</button>
-      <button type="button" class="btn sm" id="btn-list" title="快捷键 L">列表</button>
-      <button type="button" class="btn sm" id="btn-tv" title="快捷键 T"><span class="label-desk">大屏模式</span><span class="label-cast">投屏</span></button>
+      <button type="button" class="btn sm wide-only" id="btn-prev" title="快捷键 K" data-i18n="watch.prev" data-i18n-title="watch.prevHint">上一条</button>
+      <button type="button" class="btn sm wide-only" id="btn-next" title="快捷键 J" data-i18n="watch.next" data-i18n-title="watch.nextHint">下一条</button>
+      <button type="button" class="btn sm auto-btn" id="btn-auto" aria-pressed="true" data-i18n="watch.autoplay">自动播放</button>
+      <button type="button" class="btn sm" id="btn-list" title="快捷键 L" data-i18n="watch.list" data-i18n-title="watch.listHint">列表</button>
+      <button type="button" class="btn sm" id="btn-tv" title="快捷键 T" data-i18n-title="watch.tvHint"><span class="label-desk" data-i18n="watch.theater">大屏模式</span><span class="label-cast" data-i18n="watch.mirror">投屏</span></button>
     </div>
     <div class="feed" id="feed"></div>
   </section>
 </main>
 
-<nav class="tabs" id="tabs" aria-label="主导航"></nav>
+<nav class="tabs" id="tabs" aria-label="主导航" data-i18n-aria="nav.main"></nav>
 
 <div class="sheet" id="sheet" hidden>
   <div class="sheet-bg" data-close></div>
-  <div class="sheet-panel" role="dialog" aria-label="播放列表">
+  <div class="sheet-panel" role="dialog" aria-label="播放列表" data-i18n-aria="watch.playlist">
     <div class="sheet-head">
       <b id="sheet-title"></b><span id="sheet-count"></span>
-      <button type="button" class="icon-btn" data-close aria-label="关闭列表">
+      <button type="button" class="icon-btn" data-close aria-label="关闭列表" data-i18n-aria="watch.closeList">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
@@ -698,13 +708,13 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
 </div>
 
 <div class="tv-bar" id="tv-bar">
-  <button type="button" class="btn sm" id="tv-prev">上一条</button>
+  <button type="button" class="btn sm" id="tv-prev" data-i18n="watch.prev">上一条</button>
   <h2 id="tv-title"></h2>
-  <span class="hint">← → 切换，H 去 B 站看高清，Esc 退出</span>
-  <a class="btn sm" id="tv-hd" target="_blank" rel="noopener noreferrer">去 B 站看高清</a>
-  <button type="button" class="btn sm" id="tv-next">下一条</button>
-  <p class="cast-hint" id="cast-hint">先点画面播放，再横过来。请用控制中心「屏幕镜像」。不要用视频右下角的隔空播放，那样电视通常只有声音。</p>
-  <button type="button" class="btn sm" id="tv-exit"><span class="label-desk">退出大屏</span><span class="label-cast">退出投屏</span></button>
+  <span class="hint" id="tv-hint" data-i18n="watch.tvHintBar">← → 切换，H 去 B 站看高清，Esc 退出</span>
+  <a class="btn sm" id="tv-hd" target="_blank" rel="noopener noreferrer" data-i18n="watch.hd">去 B 站看高清</a>
+  <button type="button" class="btn sm" id="tv-next" data-i18n="watch.next">下一条</button>
+  <p class="cast-hint" id="cast-hint" data-i18n="watch.castHint">先点画面播放，再横过来。请用控制中心「屏幕镜像」。不要用视频右下角的隔空播放，那样电视通常只有声音。</p>
+  <button type="button" class="btn sm" id="tv-exit"><span class="label-desk" data-i18n="watch.exitTheater">退出大屏</span><span class="label-cast" data-i18n="watch.exitMirror">退出投屏</span></button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -713,11 +723,11 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
   <div class="sheet-bg" data-close-account></div>
   <div class="sheet-panel" role="dialog" aria-labelledby="account-title">
     <div class="sheet-head">
-      <button type="button" class="icon-btn" id="account-back" hidden aria-label="返回">
+      <button type="button" class="icon-btn" id="account-back" hidden aria-label="返回" data-i18n-aria="action.back">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6 9 12l6 6"/></svg>
       </button>
-      <b id="account-title">登录</b><span id="account-sub"></span>
-      <button type="button" class="icon-btn" data-close-account aria-label="关闭">
+      <b id="account-title" data-i18n="action.signIn">登录</b><span id="account-sub"></span>
+      <button type="button" class="icon-btn" data-close-account aria-label="关闭" data-i18n-aria="action.close">
         <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
       </button>
     </div>
@@ -726,17 +736,18 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
 </div>
 <div class="modal" id="merge-modal" hidden>
   <div class="modal-card" role="dialog" aria-labelledby="merge-title">
-    <h2 id="merge-title">合并这台设备上的进度</h2>
+    <h2 id="merge-title" data-i18n="account.mergeTitle">合并这台设备上的进度</h2>
     <p class="note" id="merge-lead"></p>
     <div id="merge-fields"></div>
     <p class="err" id="merge-err" hidden></p>
     <div class="hero-actions">
-      <button type="button" class="btn primary" id="merge-go">合并</button>
-      <button type="button" class="btn" id="merge-skip">先不合并</button>
+      <button type="button" class="btn primary" id="merge-go" data-i18n="account.merge">合并</button>
+      <button type="button" class="btn" id="merge-skip" data-i18n="account.mergeSkip">先不合并</button>
     </div>
   </div>
 </div>
 
+<script src="i18n.js"></script>
 <script src="account.js"></script>
 <script>
 try {
@@ -748,6 +759,17 @@ try {
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+const t = (key, vars) => (window.BiliPicksI18n && BiliPicksI18n.t(key, vars)) || key;
+const tf = (obj, name) => (window.BiliPicksI18n && BiliPicksI18n.field(obj, name)) || (obj && obj[name]) || '';
+const tc = (name) => {
+  if (name === '全部') return t('cat.all');
+  if (name === '成长路线') return t('cat.path');
+  return (window.BiliPicksI18n && BiliPicksI18n.localizeCategory(name)) || name;
+};
+function trackAbout(base) {
+  const id = (BP && (BP.track === 'y2' || BP.track === 'g1' || BP.track === 'jh')) ? BP.track : 'jh';
+  return t(base + '.' + id);
+}
 const store = {
   get(k, fallback) { try { const v = JSON.parse(localStorage.getItem(k)); return v == null ? fallback : v; } catch { return fallback; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
@@ -756,14 +778,16 @@ const store = {
 function startApp() {
 const BP = window.BP;
 const DATA = window.DATA;
-const NAV = [
-  {view: 'home', label: '首页', icon: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'},
-  {view: 'path', label: '路线', icon: '<path d="M6 21V4m0 1h12l-2.5 3.5L18 12H6"/>'},
-  {view: 'watch', label: '播放', icon: '<path d="M7 4.5v15l12-7.5z"/>'},
-  {view: 'tiers', label: BP.track === 'g1' ? '频道' : '频道榜', icon: '<path d="M5 20v-8m7 8V4m7 16v-11"/>'},
-  {view: 'about', label: '关于', icon: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-9.5v.5"/>'},
-];
-const VIEWS = NAV.map(n => n.view);
+function navItems() {
+  return [
+    {view: 'home', label: t('nav.home'), icon: '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'},
+    {view: 'path', label: t('nav.path'), icon: '<path d="M6 21V4m0 1h12l-2.5 3.5L18 12H6"/>'},
+    {view: 'watch', label: t('nav.watch'), icon: '<path d="M7 4.5v15l12-7.5z"/>'},
+    {view: 'tiers', label: t((BP.track === 'g1' || BP.track === 'y2') ? 'nav.channels' : 'nav.tierList'), icon: '<path d="M5 20v-8m7 8V4m7 16v-11"/>'},
+    {view: 'about', label: t('nav.about'), icon: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-9.5v.5"/>'},
+  ];
+}
+const VIEWS = ['home', 'path', 'watch', 'tiers', 'about'];
 const PATH_CAT = '成长路线';
 const HUES = ['#e9558a', '#f07c2a', '#d49a00', '#2fa866', '#0f9fa3', '#2f86e0', '#6b6ff0', '#a05bd8', '#cf4f9a'];
 
@@ -794,7 +818,8 @@ function toggleDone(id) {
 // ---------- 成长路线 ----------
 const byId = {};
 DATA.videos.forEach(v => { byId[v.id] = v; });
-const PATH = DATA.path || {stages: []};
+const PATH_RAW = DATA.path || {stages: []};
+let PATH = PATH_RAW;
 const pathInfo = {};   // id -> {stage, step, note}
 const pathItems = [];  // 按顺序展开，跳过失效视频
 const stages = PATH.stages.map((st, si) => {
@@ -808,6 +833,17 @@ const stages = PATH.stages.map((st, si) => {
   });
   return s;
 });
+function applyPathLang() {
+  PATH = (window.BiliPicksI18n && BiliPicksI18n.localizePath(PATH_RAW, BP.track)) || PATH_RAW;
+  (PATH.stages || []).forEach((st, i) => {
+    if (!stages[i]) return;
+    stages[i].name = st.name;
+    stages[i].age = st.age;
+    stages[i].goal = st.goal;
+    stages[i].mission = st.mission;
+  });
+}
+applyPathLang();
 const doneCount = list => list.filter(v => isDone(v.id)).length;
 const nextUndone = () => pathItems.find(v => !isDone(v.id));
 const stageOf = v => v && pathInfo[v.id] ? stages[pathInfo[v.id].stage - 1] : null;
@@ -819,7 +855,7 @@ function listFor(cat, q) {
   if (!q) return base;
   return base.filter(v => `${v.title} ${v.channel} ${v.category} ${v.orig || ''}`.toLowerCase().includes(q));
 }
-const ctxName = c => c.q.trim() ? `搜索「${c.q.trim()}」` : c.cat === '全部' ? '全部视频' : c.cat;
+const ctxName = c => c.q.trim() ? t('search.quoted', {q: c.q.trim()}) : c.cat === '全部' ? t('cat.allVideos') : tc(c.cat);
 
 // ---------- 小工具 ----------
 function clock(sec) {
@@ -830,12 +866,12 @@ function clock(sec) {
 }
 function mins(sec) {
   if (!sec) return '';
-  if (sec >= 3600) return `${Math.floor(sec / 3600)} 小时 ${Math.round(sec % 3600 / 60)} 分钟`;
-  return `${Math.max(1, Math.round(sec / 60))} 分钟`;
+  if (sec >= 3600) return t('time.hoursMins', {h: Math.floor(sec / 3600), m: Math.round(sec % 3600 / 60)});
+  return t('time.mins', {m: Math.max(1, Math.round(sec / 60))});
 }
 // 合集：时长是第 1 集的；用 page 指定配音版的视频不算合集
 const isSeries = v => v.parts > 1 && !v.page;
-const lenLabel = v => isSeries(v) ? `共 ${v.parts} 集` : mins(v.duration);
+const lenLabel = v => isSeries(v) ? t('series.total', {n: v.parts}) : mins(v.duration);
 // 老数据里有写「无」「无明显问题」的家长提示，不显示
 const cautionOf = v => (v.caution && !/^无(明显问题)?$/.test(v.caution.trim())) ? v.caution : '';
 const who = v => v.orig || v.channel;
@@ -920,9 +956,9 @@ function applyLanChrome() {
   $$('.pages-only').forEach(el => { el.hidden = true; });
   $$('.lan-only').forEach(el => { el.hidden = false; });
   const hint = $('#tv-bar .hint');
-  if (hint) hint.textContent = '← → 切换，Esc 退出';
+  if (hint) hint.textContent = t('tvBar.hintEsc');
   const cast = $('#cast-hint');
-  if (cast) cast.textContent = '先点画面播放，再横过来。请用控制中心「屏幕镜像」。不要用视频右下角的隔空播放，那样电视通常只有声音。';
+  if (cast) cast.textContent = t('watch.castHint');
   const hd = $('#tv-hd');
   if (hd) hd.hidden = true;
 }
@@ -950,8 +986,8 @@ function applyTheme() {
   document.documentElement.classList.toggle('dark', dark);
   $('meta[name="theme-color"]').content = dark ? '#0e131b' : '#f1f5fa';
   const b = $('#btn-theme');
-  b.setAttribute('aria-label', dark ? '换成浅色' : '换成深色');
-  b.title = dark ? '换成浅色（D）' : '换成深色（D）';
+  b.setAttribute('aria-label', dark ? t('theme.toLight') : t('theme.toDark'));
+  b.title = dark ? t('theme.toLightKey') : t('theme.toDarkKey');
   b.innerHTML = `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${dark
     ? '<circle cx="12" cy="12" r="4"/><path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>'
     : '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>'}</svg>`;
@@ -973,23 +1009,23 @@ function renderHero() {
   } else if (!nx) {
     main = `<div class="hero-main" style="grid-template-columns:1fr"><div>
       <p class="hero-kicker">${esc(BP.label && BP.label !== PATH.title ? BP.label + ' · ' + PATH.title : (PATH.title || BP.label || ''))}</p>
-      <h1>${n} 条全看完了，${stages.length} 关通关</h1>
-      <p class="hero-sub">${esc(BP.track === 'g1' ? '这条路线看完了。以后想看的时候，再打开一条就好，看完就停。' : '接下来别停在看视频上：找一个你想解决的小问题，自己写代码试一试。')}</p>
-      <div class="hero-actions"><button type="button" class="btn" data-go="path">回看整条路线</button></div>
+      <h1>${t('hero.allDone', {n, stages: stages.length})}</h1>
+      <p class="hero-sub">${esc(BP.track === 'g1' || BP.track === 'y2' ? t('hero.g1Done') : t('hero.jhDone'))}</p>
+      <div class="hero-actions"><button type="button" class="btn" data-go="path">${t('hero.reviewPath')}</button></div>
     </div></div>`;
   } else {
     const pi = pathInfo[nx.id];
     main = `<div class="hero-main" style="--h:${cur.hue}">
-      <button type="button" class="hero-cover" data-play="${esc(nx.id)}" aria-label="播放：${esc(nx.title)}">
+      <button type="button" class="hero-cover" data-play="${esc(nx.id)}" aria-label="${esc(t('play.aria', {title: nx.title}))}">
         ${cover(nx)}<span class="playdot" aria-hidden="true">▶</span>${nx.duration ? `<span class="dur">${esc(clock(nx.duration))}</span>` : ''}
       </button>
       <div>
-        <p class="hero-kicker">${stagePill(cur, `第 ${cur.no} 关`)}<span>${esc(BP.label && BP.label !== PATH.title ? BP.label + ' · ' + PATH.title : (PATH.title || BP.label || ''))}，${d ? `已看 ${d} / ${n}` : `一共 ${stages.length} 关`}</span></p>
+        <p class="hero-kicker">${stagePill(cur, t('hero.stageNo', {n: cur.no}))}<span>${esc(BP.label && BP.label !== PATH.title ? BP.label + ' · ' + PATH.title : (PATH.title || BP.label || ''))}，${d ? t('hero.watched', {d, n}) : t('hero.totalStages', {n: stages.length})}</span></p>
         <h1>${esc(pi.note)}</h1>
         <p class="hero-sub">${esc(nx.title)}</p>
         <div class="hero-actions">
-          <button type="button" class="btn primary" data-play="${esc(nx.id)}">${d ? '接着看' : '从第 1 关开始'}</button>
-          <button type="button" class="btn" data-go="path">看整条路线</button>
+          <button type="button" class="btn primary" data-play="${esc(nx.id)}">${d ? t('hero.continue') : t('hero.start')}</button>
+          <button type="button" class="btn" data-go="path">${t('hero.seePath')}</button>
         </div>
       </div>
     </div>`;
@@ -997,7 +1033,7 @@ function renderHero() {
   const trail = stages.map(st => {
     const dn = doneCount(st.vids), all = st.vids.length;
     const cls = [dn === all && all ? 'done' : '', cur === st ? 'now' : '', st.later ? 'later' : ''].join(' ');
-    return `<button type="button" class="node ${cls}" data-stage="${st.no}" style="--h:${st.hue}" aria-label="第 ${st.no} 关 ${esc(st.name)}，已看 ${dn} / ${all}">
+    return `<button type="button" class="node ${cls}" data-stage="${st.no}" style="--h:${st.hue}" aria-label="${esc(t('hero.nodeAria', {n: st.no, name: st.name, d: dn, all}))}">
       <span class="ring" style="--p:${all ? dn / all * 100 : 0}"><span>${esc(st.icon || st.no)}</span></span>
       <span class="node-name">${esc(st.name)}</span>
       <span class="node-count">${st.later && !dn ? esc(st.age.split(' · ')[0]) : `${dn} / ${all}`}</span>
@@ -1010,23 +1046,23 @@ function renderHero() {
 function renderChips() {
   const cats = ['全部', PATH_CAT, ...DATA.categories];
   $('#chips').innerHTML = cats.map(c =>
-    `<button type="button" role="tab" aria-selected="${c === state.cat}" class="chip ${c === state.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');
+    `<button type="button" role="tab" aria-selected="${c === state.cat}" class="chip ${c === state.cat ? 'on' : ''}" data-cat="${esc(c)}">${esc(tc(c))}</button>`).join('');
 }
 let homeList = [];
 function renderGrid() {
   homeList = listFor(state.cat, state.q);
   const inPath = state.cat === PATH_CAT;
   $('#result').textContent = !homeList.length ? ''
-    : inPath ? `成长路线 ${homeList.length} 步，按顺序排列`
-    : `${homeList.length} 个手选视频，没有推荐算法`;
+    : inPath ? t('result.path', {n: homeList.length})
+    : t('result.picked', {n: homeList.length});
   $('#grid').innerHTML = homeList.map((v, i) => {
     const st = inPath ? stageOf(v) : null;
     return `<button type="button" class="card" data-i="${i}">
-      <span class="thumb">${cover(v)}${isDone(v.id) ? '<span class="seen">✓ 看过</span>' : ''}${v.duration ? `<span class="dur">${esc(isSeries(v) ? `${v.parts} 集` : clock(v.duration))}</span>` : ''}</span>
+      <span class="thumb">${cover(v)}${isDone(v.id) ? `<span class="seen">${t('watch.seen')}</span>` : ''}${v.duration ? `<span class="dur">${esc(isSeries(v) ? t('watch.parts', {n: v.parts}) : clock(v.duration))}</span>` : ''}</span>
       <span class="card-t">${esc(v.title)}</span>
-      <span class="card-s"><span class="who">${esc(who(v))}</span>${st ? stagePill(st, `第 ${st.no} 关`) : `<span class="tag">${esc(v.category)}</span>`}<span class="tag">${v.minAge}+</span></span>
+      <span class="card-s"><span class="who">${esc(who(v))}</span>${st ? stagePill(st, t('hero.stageNo', {n: st.no})) : `<span class="tag">${esc(tc(v.category))}</span>`}<span class="tag">${v.minAge}+</span></span>
     </button>`;
-  }).join('') || `<p class="empty">没找到「${esc(state.q.trim() || state.cat)}」相关的视频。换个词，或者点上面的「全部」。</p>`;
+  }).join('') || `<p class="empty">${t('result.empty', {q: state.q.trim() || tc(state.cat)})}</p>`;
 }
 function renderHome() { renderHero(); renderChips(); renderGrid(); }
 
@@ -1038,7 +1074,7 @@ function stepHTML(v) {
     <span class="mini">${cover(v)}</span>
     <span style="min-width:0"><span class="t">${esc(pi.note)}</span>
       <span class="s">${esc(v.title)}</span>
-      <span class="s">${esc(who(v))}，${esc(lenLabel(v))}${v.orig ? '，搬运' : ''}</span></span>
+      <span class="s">${esc(who(v))}，${esc(lenLabel(v))}${v.orig ? t('tag.repostComma') : ''}</span></span>
   </button></li>`;
 }
 function renderPath(openStage) {
@@ -1050,24 +1086,24 @@ function renderPath(openStage) {
     const steps = `<ol class="steps">${st.vids.map(stepHTML).join('')}</ol>`;
     const m = st.mission;
     const mission = m ? `<div class="mission">
-        <b>动手任务</b><p>${esc(m.text)}</p>
+        <b>${t('mission.title')}</b><p>${esc(m.text)}</p>
         <div class="mission-row">
-          ${m.url ? `<a class="btn sm" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">打开 ${esc(m.label || '网站')}</a>` : ''}
-          <label><input type="checkbox" data-mission="${st.no}" ${missions[st.no] ? 'checked' : ''}>做完了</label>
+          ${m.url ? `<a class="btn sm" href="${esc(m.url)}" target="_blank" rel="noopener noreferrer">${esc(t('mission.open', {name: m.label || t('mission.site')}))}</a>` : ''}
+          <label><input type="checkbox" data-mission="${st.no}" ${missions[st.no] ? 'checked' : ''}>${t('mission.done')}</label>
         </div>
       </div>` : '';
     const body = st.later
-      ? `<details class="more" ${dn || openStage === st.no ? 'open' : ''}><summary>展开这一关的 ${all} 条</summary>${steps}${mission}</details>`
+      ? `<details class="more" ${dn || openStage === st.no ? 'open' : ''}><summary>${t('path.expand', {n: all})}</summary>${steps}${mission}</details>`
       : steps + mission;
     let divider = '';
     if (st.later && !dividerShown) {
       dividerShown = true;
-      divider = `<p class="divider"><b>下面的关卡学过函数、会一点 Python 再看更顺。</b>现在点开看看也没关系，看不懂很正常，知道山顶长什么样就好。</p>`;
+      divider = `<p class="divider"><b>${t('path.laterNote')}</b></p>`;
     }
     return `${divider}<section class="pstage" id="stage-${st.no}" style="--h:${st.hue}">
       <div class="pstage-head">
         <span class="ring" style="--p:${all ? dn / all * 100 : 0}"><span>${esc(st.icon || st.no)}</span></span>
-        <div><p class="pstage-no">第 ${st.no} 关<span class="age">${esc(st.age)}</span></p><h2>${esc(st.name)}</h2></div>
+        <div><p class="pstage-no">${t('hero.stageNo', {n: st.no})}<span class="age">${esc(st.age)}</span></p><h2>${esc(st.name)}</h2></div>
         <span class="count">${dn} / ${all}</span>
       </div>
       <p class="goal">${esc(st.goal)}</p>
@@ -1075,26 +1111,28 @@ function renderPath(openStage) {
     </section>`;
   }).join('');
   $('#path-root').innerHTML = `
-    <h1>${esc(PATH.title || '成长路线')}</h1>
+    <h1>${esc(PATH.title || t('cat.path'))}</h1>
     <p class="lead">${esc(PATH.intro || '')}</p>
     <div class="path-progress">
-      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${d}" aria-label="路线进度"><i style="width:${n ? d / n * 100 : 0}%"></i></div>
-      <span class="count">已看 ${d} / ${n}</span>
-      ${nx ? `<button type="button" class="btn primary sm" data-play="${esc(nx.id)}">${d ? '接着看' : '从第 1 关开始'}</button>` : ''}
+      <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${n}" aria-valuenow="${d}" aria-label="${esc(t('path.progressAria'))}"><i style="width:${n ? d / n * 100 : 0}%"></i></div>
+      <span class="count">${t('hero.watched', {d, n})}</span>
+      ${nx ? `<button type="button" class="btn primary sm" data-play="${esc(nx.id)}">${d ? t('hero.continue') : t('hero.start')}</button>` : ''}
     </div>
-    <details class="parents"><summary>给家长的 ${(PATH.tips || []).length} 条建议</summary><ul>${(PATH.tips || []).map(t => `<li>${esc(t)}</li>`).join('')}</ul></details>
+    <details class="parents"><summary>${t('path.tipsSummary', {n: (PATH.tips || []).length})}</summary><ul>${(PATH.tips || []).map(tip => `<li>${esc(tip)}</li>`).join('')}</ul></details>
     ${html}
-    <p class="fine">${BP.mode === 'cloud' ? '进度记在当前孩子的云端档案里，手机、电视和其他浏览器登录同一个孩子就能接着看。换一门课不会清掉其他课的记录。' : '还没登录时，每门课的进度分开记在这台设备上。清除浏览数据会丢。'}在播放页点「✓ 看完了」打勾，再点一次取消。</p>`;
+    <p class="fine">${BP.mode === 'cloud' ? t('path.progressCloud') : t('path.progressGuest')}${t('path.progressMark')}</p>`;
 }
 
 // ---------- 频道榜 ----------
-const KID = {
-  go: '✅ 现在就能看',
-  interest: '🔵 看孩子兴趣',
-  pick: '⚠️ 家长先挑',
-  later: '⏳ 先打好基础再看',
-  unknown: '❔ 还没细看',
-};
+function kidLabels() {
+  return {
+    go: t('kid.goNow'),
+    interest: t('kid.interest'),
+    pick: t('kid.pick'),
+    later: t('kid.later'),
+    unknown: t('kid.unknown'),
+  };
+}
 function renderTiers() {
   const show = r => state.tierFilter === 'all' || r.kid === 'go' || r.kid === 'interest';
   const onSite = name => DATA.videos.filter(v => !v.dead && v.channel === name).length;
@@ -1105,94 +1143,86 @@ function renderTiers() {
         ${lanMode
           ? `<span class="name">${esc(r.name)}</span>`
           : `<a class="name" href="https://space.bilibili.com/${esc(r.mid)}" target="_blank" rel="noopener noreferrer">${esc(r.name)} ↗</a>`}
-        <span class="kid ${esc(r.kid)}">${esc(KID[r.kid] || '')}</span>
+        <span class="kid ${esc(r.kid)}">${esc(kidLabels()[r.kid] || '')}</span>
       </div>
       ${extra}
-      <div class="s">${esc(r.fans)} 粉丝，${esc(r.videos)} 个视频${n ? `　<a href="#" data-q="${esc(r.name)}">本站有 ${n} 条</a>` : ''}</div>
+      <div class="s">${t('channel.fans', {fans: r.fans, videos: r.videos})}${n ? `　<a href="#" data-q="${esc(r.name)}">${t('channel.onSite', {n})}</a>` : ''}</div>
       ${r.note ? `<div class="note">${esc(r.note)}</div>` : ''}
     </div>`;
   };
   const section = (badge, title, sub, rows) => rows.length ? `
     <section class="tier">
-      <div class="tier-head"><span class="tier-badge ${badge}">${badge === 'O' ? '原' : badge}</span><h2>${esc(title)}</h2><span class="tsub">${esc(sub)}</span></div>
+      <div class="tier-head"><span class="tier-badge ${badge}">${badge === 'O' ? t('badge.orig') : badge}</span><h2>${esc(title)}</h2><span class="tsub">${esc(sub)}</span></div>
       <div class="rows">${rows.join('')}</div>
     </section>` : '';
   const originals = (DATA.originals || []).filter(show).map(r =>
-    row(r, `<div class="what">原频道 ${esc(r.orig)}，Tristan 评 ${esc(r.tristan)}</div>`));
-  const tiers = (DATA.tiers || []).map(t => section(t.tier, `${t.tier} 档：${t.label}`, '',
-    t.items.filter(show).map(r => row(r, `<div class="what">${esc(r.what)}</div><div class="s">对标：${esc(r.like)}</div>`)))).join('');
+    row(r, `<div class="what">${esc(t('channel.origTristan', {orig: r.orig, tristan: r.tristan}))}</div>`));
+  const tiers = (DATA.tiers || []).map(tier => section(tier.tier, t('tier.heading', {tier: tier.tier, label: (window.BiliPicksI18n && BiliPicksI18n.localizeTierLabel(tier.label)) || tier.label}), '',
+    tier.items.filter(show).map(r => row(r, `<div class="what">${esc(r.what)}</div><div class="s">${esc(t('channel.like', {like: r.like}))}</div>`)))).join('');
   const src = DATA.tierSource || {};
-  const tiersHead = BP.track === 'g1'
-    ? `<h1>给家长的频道名单</h1>
-    <p class="lead">${src.title ? esc(src.title) + '。' : ''}这里只收博物馆、科技馆、动物园和温和的儿童向官方号，方便家长自己再挑。S 是现在就能一起看，A 先挑短的，B 按需打开。分档是编辑建议，不是官方分级；粉丝数 ${esc(DATA.built)} 更新。</p>`
-    : `<h1>B 站频道榜</h1>
-    <p class="lead">参考 <a href="${esc(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.title)}</a> 的思路：看重讲得深、制作好、能讲给外行听、有动手的工程味。S 是杰作，A 开眼界、旧视频值得补完，B 基本每期都好，C 有很多好片，D 喜欢就看。分档是编辑判断（按内容方向和口碑，没有逐个看片）；粉丝数 ${esc(DATA.built)} 更新。</p>`;
-  const tiersFoot = BP.track === 'g1'
-    ? '这个名单只收机构或作者自己经营的官方号。低龄营销动画、早教机带货、鬼畜和猎奇鉴定、初中以上的编程和人工智能课，都没有放进来。'
-    : '这个榜只收 UP 主自己经营的频道。Primitive Technology、Stuff Made Here、Kiwami Japan 这些原版频道在 B 站只有搬运号，不进榜。公开课和演讲是另一回事：卡帕西、李宏毅、吴恩达没有 B 站官方号，路线里收了字幕清楚的搬运版，并标出原作者。';
-  const originalSub = BP.track === 'g1' ? '一年级版没有把成人 STEM 频道作为主清单' : 'Tristan 榜单里 156 个频道，在 B 站有官方号的只有这几个';
-  $('#tiers-root').innerHTML = `
+  const localizeGap = (window.BiliPicksI18n && BiliPicksI18n.localizeGap) ? BiliPicksI18n.localizeGap : (g => g);
+  const isElem = BP.track === 'g1' || BP.track === 'y2';
+  const tiersHead = isElem
+    ? `<h1>${t('tiers.g1.title')}</h1>
+    <p class="lead">${src.title ? esc(src.title) + '. ' : ''}${t('tiers.g1.lead', {built: DATA.built})}</p>`
+    : `<h1>${t('tiers.jh.title')}</h1>
+    <p class="lead">${t('tiers.jh.leadBefore')} <a href="${esc(src.url)}" target="_blank" rel="noopener noreferrer">${esc(src.title)}</a> ${t('tiers.jh.leadAfter', {built: DATA.built})}</p>`;
+  const tiersFoot = isElem ? t('tiers.g1.policy') : t('tiers.jh.policy');
+  const originalSub = isElem ? t('tiers.g1.origSub') : t('tiers.jh.origSub');
+    $('#tiers-root').innerHTML = `
     ${tiersHead}
-    <div class="legend">${Object.entries(KID).map(([k, t]) => `<span class="kid ${k}">${esc(t)}</span>`).join('')}</div>
+    <div class="legend">${Object.entries(kidLabels()).map(([k, lab]) => `<span class="kid ${k}">${esc(lab)}</span>`).join('')}</div>
     <div class="filters">
-      <button type="button" class="chip ${state.tierFilter === 'all' ? 'on' : ''}" data-f="all">全部</button>
-      <button type="button" class="chip ${state.tierFilter === 'kid' ? 'on' : ''}" data-f="kid">只看现在就能看的</button>
+      <button type="button" class="chip ${state.tierFilter === 'all' ? 'on' : ''}" data-f="all">${t('cat.all')}</button>
+      <button type="button" class="chip ${state.tierFilter === 'kid' ? 'on' : ''}" data-f="kid">${t('chip.readyNow')}</button>
     </div>
-    ${section('O', '原版频道的 B 站官方号', originalSub, originals)}
+    ${section('O', t('section.originals'), originalSub, originals)}
     ${tiers}
-    <h2 class="sec">还没找到好对应的方向</h2>
-    <ul class="gaps">${(DATA.tierGaps || []).map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+    <h2 class="sec">${t('section.gaps')}</h2>
+    <ul class="gaps">${(DATA.tierGaps || []).map(g => `<li>${esc(localizeGap(g))}</li>`).join('')}</ul>
     <p class="fine">${esc(tiersFoot)}</p>`;
 }
 
 function renderAbout() {
   const s = DATA.site || {};
   const who = [s.curator, s.curatorHandle].filter(Boolean);
-  $('#about-curator').textContent = who.length > 1 ? `${who[0]}（${who[1]}）` : (who[0] || '家长');
-  $('#about-audience').textContent = s.audience || '孩子';
-  const name = esc(who.join(' · ') || '家长');
+  const curatorName = (window.BiliPicksI18n && BiliPicksI18n.localizeCurator(s.curator)) || s.curator || t('curator.default');
+  const audienceName = (window.BiliPicksI18n && BiliPicksI18n.localizeAudience(s.audience)) || s.audience || '';
+  const whoLabel = [curatorName, s.curatorHandle].filter(Boolean);
+  const intro = $('#about-intro');
+  if (intro) {
+    intro.innerHTML = t('about.introPrefix') + '<strong id="about-curator">' + esc(whoLabel.length > 1 ? `${whoLabel[0]}（${whoLabel[1]}）` : (whoLabel[0] || t('curator.default'))) + '</strong>' + t('about.introMid') + '<strong id="about-audience">' + esc(audienceName) + '</strong>' + t('about.introSuffix') + ' <span id="about-aim">' + esc(trackAbout('about.aim')) + '</span>' + t('about.aimJoin') + '<strong>' + t('about.aimStrong') + '</strong>.';
+  }
+  const name = esc(whoLabel.join(' · ') || t('curator.default'));
   const link = s.curatorUrl ? `<a href="${esc(s.curatorUrl)}" target="_blank" rel="noopener noreferrer">${name}</a>` : name;
-  $('#about-credit').innerHTML = `策展：${link}${s.timezone ? `（${esc(s.timezone)}）` : ''}`;
+  $('#about-credit').innerHTML = `${t('about.creditLabel')}${link}${s.timezone ? `（${esc(s.timezone)}）` : ''}`;
   $('#about-kpis').innerHTML = `
-    <div class="kpi"><b>${DATA.videos.filter(v => !v.dead).length}</b><span>手选视频</span></div>
-    <div class="kpi"><b>${stages.length} 关 ${pathItems.length} 步</b><span>成长路线</span></div>
-    <div class="kpi"><b>${(DATA.tiers || []).reduce((n, t) => n + t.items.length, 0) + (DATA.originals || []).length}</b><span>${BP.track === 'g1' ? '频道收录' : '频道榜收录'}</span></div>`;
-  const g1 = BP.track === 'g1';
-  $('#about-aim').textContent = g1
-    ? '目标是一起听故事、看小动物、走进博物馆，再问一问「为什么会这样」。'
-    : '目标是培养科学兴趣，并走向理解机器学习。所以先看 AI 有多厉害，再弄懂它怎么学，然后自己动手；旁边配上自然、科学、历史、数学这些开眼界的内容。';
-  $('#about-route').textContent = g1
-    ? '「从好奇到会看」一共 6 关，都是现在就能看的小片子。每一关最后有一个在家里做的小任务，比如折纸、看云、数一数，不用打开国外的网站。'
-    : '「初中生学 AI」里的路线叫「从好奇到机器学习」，一共 9 关。前几关现在就能看；神经网络和 GPT 关，学过函数再看更顺；大师课要先会一点 Python。每一关最后有一个动手任务。';
-  $('#about-sync').textContent = BP.mode === 'cloud'
-    ? '登录之后，看完的进度、动手任务、自动播放、深色模式和播放位置记在当前孩子的档案里，按课程分开。手机、电视和其他浏览器登录同一个孩子就能接着看。换一门课不会清掉其他课。'
-    : '还没登录时，看完的进度、动手任务、自动播放和深色模式只存在这台设备上，每门课各记各的。换设备不同步，清除浏览数据会丢。家长登录后可以同步到云端。';
-  $('#about-repost').textContent = g1
-    ? '本清单主要收博物馆、科技馆、动物园和教材出版社的官方视频。如果有搬运、译制的片子，播放页上会标「搬运」并写明原作者。搬运的视频有可能被下架，失效的会自动从页面上隐藏。'
-    : '卡帕西（Andrej Karpathy）、李宏毅、吴恩达、李飞飞这些老师没有在 B 站开官方号，他们的公开课和演讲只有别人译制上传的版本。这类内容收的是字幕清楚、播放稳定的搬运版，播放页上会标「搬运」并写明原作者。3Blue1Brown、Veritasium、StatQuest、Mark Rober 这些有 B 站官方号的，一律用官方号。搬运的视频有可能被下架，失效的会自动从页面上隐藏。';
-  $('#about-tasks').textContent = g1
-    ? '动手任务都在家里完成，不依赖 Google、python.org 或 Scratch 编辑器，这些网站在国内常常打不开，对一年级也太难。实验和折纸请家长陪着；不要模仿刀、锯和火，也不要把水或水果弄到电器上。'
-    : '动手任务里的 Quick, Draw!、Teachable Machine、TensorFlow Playground 是 Google 的网站，Python 在线壳是 python.org 的页面，有的网络打不开。分类浏览里的 Scratch 入门在麻省理工的网站上练习，同样可能打不开。';
-  $('#about-log').textContent = g1
-    ? '2026-11-15 按大约 6～7 岁排了 6 关「从好奇到会看」。这门课在本站里。原来的一年级网址以后可以转到 ?track=g1。本站是改编版，不是原作者站点。'
-    : '2026-11-15 按初中（初一到初三）重排成长路线：补上初中物理关，编程主路改为 Python，把神经网络和 GPT 关标成「学过函数 / 先会 Python 再看更顺」。本站是改编版，不是原作者站点。原项目更新记录：2026-11-08 整理频道与代表作；11-09 按小升初筛选；11-10 加入成长路线和频道榜；11-12 原版路线重排成 9 关并加入动手任务。';
+    <div class="kpi"><b>${DATA.videos.filter(v => !v.dead).length}</b><span>${t('kpi.videos')}</span></div>
+    <div class="kpi"><b>${t('kpi.stagesSteps', {stages: stages.length, steps: pathItems.length})}</b><span>${t('kpi.path')}</span></div>
+    <div class="kpi"><b>${(DATA.tiers || []).reduce((n, tier) => n + tier.items.length, 0) + (DATA.originals || []).length}</b><span>${t((BP.track === 'g1' || BP.track === 'y2') ? 'kpi.channels' : 'kpi.tierList')}</span></div>`;
+  $('#about-route').textContent = trackAbout('about.route');
+  $('#about-sync').textContent = BP.mode === 'cloud' ? t('about.sync.cloud') : t('about.sync.guest');
+  $('#about-repost').textContent = trackAbout('about.repost');
+  $('#about-tasks').textContent = trackAbout('about.tasks');
+  $('#about-log').textContent = trackAbout('about.log');
+
 }
 
 // ---------- 播放页 ----------
 const feed = $('#feed');
 let feedList = [];
 const slideEl = i => feed.children[i];
-const posterHTML = v => `<button type="button" class="poster" data-act="play" aria-label="播放：${esc(v.title)}">
-  ${cover(v)}<span class="playdot" aria-hidden="true">▶</span>${v.duration ? `<span class="dur">${esc(clock(v.duration))}${isSeries(v) ? `，共 ${v.parts} 集` : ''}</span>` : ''}</button>`;
+const posterHTML = v => `<button type="button" class="poster" data-act="play" aria-label="${esc(t('play.aria', {title: v.title}))}">
+  ${cover(v)}<span class="playdot" aria-hidden="true">▶</span>${v.duration ? `<span class="dur">${esc(clock(v.duration))}${isSeries(v) ? t('series.suffix', {n: v.parts}) : ''}</span>` : ''}</button>`;
 
 function slideHTML(v, i) {
   const pi = pathInfo[v.id], st = stageOf(v), c = cautionOf(v), nx = feedList[i + 1];
   const badges = [
-    st ? `<button type="button" data-stage="${st.no}" title="去路线页看这一关">${stagePill(st, `第 ${st.no} 关，第 ${pi.step} 步`)}</button>` : '',
+    st ? `<button type="button" data-stage="${st.no}" title="${esc(t('path.goStage'))}">${stagePill(st, t('hero.stageStep', {n: st.no, step: pi.step}))}</button>` : '',
     `<span class="tag">${esc(v.category)}</span>`,
-    v.duration ? `<span class="tag">${esc(isSeries(v) ? `第 1 集 ${mins(v.duration)}，共 ${v.parts} 集` : mins(v.duration))}</span>` : '',
-    `<span class="tag">${v.minAge} 岁+</span>`,
-    v.orig ? '<span class="tag warn">搬运</span>' : '',
+    v.duration ? `<span class="tag">${esc(isSeries(v) ? t('series.first', {dur: mins(v.duration), n: v.parts}) : mins(v.duration))}</span>` : '',
+    `<span class="tag">${t('age.plus', {n: v.minAge})}</span>`,
+    v.orig ? `<span class="tag warn">${t('tag.repost')}</span>` : '',
   ].join('');
   const up = lanMode
     ? `<span>${esc(v.channel)}</span>`
@@ -1203,26 +1233,26 @@ function slideHTML(v, i) {
       <div class="info-scroll">
         <div class="badges">${badges}</div>
         <h2>${esc(v.title)}</h2>
-        <p class="by">${v.orig ? `原作者 ${esc(v.orig)}，由 UP 主 ${up} 搬运` : `UP 主 ${up}`}</p>
+        <p class="by">${v.orig ? t('by.repost', {orig: v.orig, up}) : t('by.up', {up})}</p>
         ${pi || v.reason ? `<div class="why">${pi ? `<b>${esc(pi.note)}</b>` : ''}${v.reason ? `<p>${esc(v.reason)}</p>` : ''}</div>` : ''}
-        ${c ? `<p class="caution"><b>家长提示</b>　${esc(c)}</p>` : ''}
+        ${c ? `<p class="caution"><b>${t('caution.parent')}</b>　${esc(c)}</p>` : ''}
       </div>
       <div class="actions">
         <button type="button" class="btn done-btn" data-act="done"></button>
-        ${lanMode ? '' : `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer" title="站内播放器最高 480P；到 B 站登录后可看 1080P（快捷键 H）">去 B 站看高清</a>`}
+        ${lanMode ? '' : `<a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener noreferrer" title="${esc(t('watch.hdTitle'))}">${t('watch.hd')}</a>`}
       </div>
       <button type="button" class="next-hint" data-act="next">${nx
-        ? `<span class="arrow touch" aria-hidden="true">︿</span><span class="lbl"><span class="touch">上滑看下一条</span><span class="wide-only">下一条</span></span><span class="nt">${esc(pathInfo[nx.id] && state.ctx.cat === PATH_CAT ? pathInfo[nx.id].note : nx.title)}</span>`
-        : `<span class="lbl">这是最后一条</span><span class="nt">点这里回到第一条</span>`}</button>
+        ? `<span class="arrow touch" aria-hidden="true">︿</span><span class="lbl"><span class="touch">${t('watch.swipeNext')}</span><span class="wide-only">${t('watch.next')}</span></span><span class="nt">${esc(pathInfo[nx.id] && state.ctx.cat === PATH_CAT ? pathInfo[nx.id].note : nx.title)}</span>`
+        : `<span class="lbl">${t('watch.last')}</span><span class="nt">${t('watch.backFirst')}</span>`}</button>
     </div>
   </article>`;
 }
 function paintDone(slide, v, pop) {
   const b = $('.done-btn', slide), on = isDone(v.id);
-  b.textContent = on ? '✓ 已看完' : '✓ 看完了';
+  b.textContent = on ? t('watch.doneOn') : t('watch.markDone');
   b.classList.toggle('on', on);
   b.setAttribute('aria-pressed', on);
-  b.title = on ? '再点一次取消' : '标记为看完，路线会记进度';
+  b.title = on ? t('watch.unmark') : t('watch.markTitle');
   if (pop) { b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop'); }
 }
 function mount(slide, v, autoplay) {
@@ -1281,7 +1311,7 @@ function mountLan(slide, v, autoplay) {
     if (!video.isConnected) return;
     if (info && info.error) { toast(info.error); return; }
     attachLanMedia(video, info, autoplay);
-  }).catch(() => { if (video.isConnected) toast('暂时播不了，请稍后再试'); });
+  }).catch(() => { if (video.isConnected) toast(t('play.fail')); });
 }
 function unmount(slide) {
   const box = $('.player', slide);
@@ -1295,13 +1325,13 @@ let autoTimer;
 function paintAuto() {
   const b = $('#btn-auto');
   b.setAttribute('aria-pressed', autoplay);
-  b.title = autoplay ? '滑到哪条就自动播哪条，点一下关掉（快捷键 A）' : '现在要点封面才播，点一下打开自动播放（快捷键 A）';
+  b.title = autoplay ? t('auto.onTitle') : t('auto.offTitle');
 }
 function toggleAuto() {
   autoplay = !autoplay;
   saveProgress();
   paintAuto();
-  toast(autoplay ? '自动播放已打开' : '自动播放已关闭，点封面才播');
+  toast(autoplay ? t('auto.onToast') : t('auto.offToast'));
   if (autoplay && state.view === 'watch' && feedList.length) mount(slideEl(state.idx), feedList[state.idx], true);
 }
 // 停稳一会儿再加载播放器：一口气连滑好几条时，中途经过的不加载
@@ -1342,7 +1372,7 @@ function renderFeed() {
   io.disconnect();
   $('#feed-name').textContent = ctxName(state.ctx);
   if (!feedList.length) {
-    feed.innerHTML = `<p class="empty">这个列表里没有视频。<button type="button" class="btn sm" data-act="home">回首页挑一条</button></p>`;
+    feed.innerHTML = `<p class="empty">${t('empty.list')}<button type="button" class="btn sm" data-act="home">${t('empty.pickHome')}</button></p>`;
     $('#feed-pos').textContent = '';
     return;
   }
@@ -1358,8 +1388,8 @@ function renderFeed() {
 const calm = matchMedia('(prefers-reduced-motion: reduce)');
 function goTo(i, {play = false} = {}) {
   if (!feedList.length) return;
-  if (i < 0) { toast('已经是第一条了'); return; }
-  if (i >= feedList.length) { toast('这是最后一条'); return; }
+  if (i < 0) { toast(t('toast.first')); return; }
+  if (i >= feedList.length) { toast(t('toast.last')); return; }
   const near = Math.abs(i - state.idx) === 1;
   if (near && !play && !state.tv && !calm.matches) {
     slideEl(i).scrollIntoView({behavior: 'smooth', block: 'start'}); // 滑到位后由 IntersectionObserver 接手
@@ -1379,10 +1409,10 @@ function onDone(slide) {
   if (!isDone(v.id)) return;
   if (st) {
     const now = doneCount(st.vids), all = st.vids.length;
-    if (now === all && before < all) toast(`🎉 第 ${st.no} 关通关！去路线页做这一关的动手任务`);
-    else toast(`第 ${st.no} 关：已看 ${now} / ${all}`);
+    if (now === all && before < all) toast(t('toast.stageClear', {n: st.no}));
+    else toast(t('toast.stageProgress', {n: st.no, d: now, all: all}));
   } else {
-    toast('记下了');
+    toast(t('toast.noted'));
   }
 }
 
@@ -1392,13 +1422,13 @@ function openSheet() {
   const inPath = state.ctx.cat === PATH_CAT && !state.ctx.q.trim();
   let last = 0;
   $('#sheet-title').textContent = ctxName(state.ctx);
-  $('#sheet-count').textContent = `${feedList.length} 条，看过 ${doneCount(feedList)} 条`;
+  $('#sheet-count').textContent = t('sheet.count', {n: feedList.length, d: doneCount(feedList)});
   $('#sheet-list').innerHTML = feedList.map((v, i) => {
     const pi = pathInfo[v.id], st = stageOf(v);
     let head = '';
     if (inPath && pi.stage !== last) {
       last = pi.stage;
-      head = `<div class="sheet-stage" style="--h:${st.hue}">${esc(st.icon || '')} 第 ${st.no} 关　${esc(st.name)}</div>`;
+      head = `<div class="sheet-stage" style="--h:${st.hue}">${esc(st.icon || '')} ${esc(t('hero.stageNo', {n: st.no}))}　${esc(st.name)}</div>`;
     }
     const ok = isDone(v.id);
     return `${head}<button type="button" class="q ${i === state.idx ? 'on' : ''} ${ok ? 'is-done' : ''}" data-i="${i}">
@@ -1420,11 +1450,11 @@ function useCastFullscreen() {
 function paintTvButton() {
   const b = $('#btn-tv');
   if (useCastFullscreen()) {
-    b.title = '铺满屏幕，再用手机的屏幕镜像投到电视';
-    b.setAttribute('aria-label', '投屏到电视');
+    b.title = t('watch.mirrorTitle');
+    b.setAttribute('aria-label', t('watch.mirrorAria'));
   } else {
-    b.title = '快捷键 T';
-    b.setAttribute('aria-label', '大屏模式');
+    b.title = t('watch.tvHint');
+    b.setAttribute('aria-label', t('watch.theaterAria'));
   }
 }
 function fitCastBar() {
@@ -1455,14 +1485,14 @@ function bindAirPlayHint(video) {
   video._airplayHint = true;
   const warn = () => {
     if (video.webkitCurrentPlaybackTargetIsWireless) {
-      toast('电视若只有声音，请退出隔空播放，改用控制中心的「屏幕镜像」');
+      toast(t('cast.soundOnly'));
     }
   };
   video.addEventListener('webkitcurrentplaybacktargetiswirelesschange', warn);
   warn();
 }
 function remindScreenMirror() {
-  toast('请用控制中心「屏幕镜像」。视频里的隔空播放常常只有声音，没有画面');
+  toast(t('cast.useMirror'));
 }
 function activeWatchVideo() {
   return document.querySelector('.slide.active .player video') || document.querySelector('.player video');
@@ -1651,10 +1681,13 @@ document.addEventListener('visibilitychange', () => {
 });
 
 // ---------- 事件 ----------
-const navHTML = NAV.map(n => `<button type="button" data-view="${n.view}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${n.icon}</svg><span>${n.label}</span></button>`).join('');
-// 电视版是单独的页面（tv.html），只放在电脑顶栏；手机底部标签栏不放
-$('#nav').innerHTML = navHTML + `<a class="nav-tv" href="tv.html?track=${BP.track}" title="给电视、投影仪用的遥控器界面">电视版</a>`;
-$('#tabs').innerHTML = navHTML;
+function paintNav() {
+  const navHTML = navItems().map(n => `<button type="button" data-view="${n.view}"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${n.icon}</svg><span>${n.label}</span></button>`).join('');
+  // 电视版是单独的页面（tv.html），只放在电脑顶栏；手机底部标签栏不放
+  $('#nav').innerHTML = navHTML + `<a class="nav-tv" href="tv.html?track=${BP.track}" title="${esc(t('nav.tvTitle'))}">${t('nav.tv')}</a>`;
+  $('#tabs').innerHTML = navHTML;
+}
+paintNav();
 for (const el of [$('#nav'), $('#tabs')]) {
   el.addEventListener('click', e => {
     const b = e.target.closest('[data-view]');
@@ -1696,7 +1729,7 @@ $('#path-root').addEventListener('click', e => {
 $('#path-root').addEventListener('change', e => {
   const no = e.target.dataset && e.target.dataset.mission;
   if (!no) return;
-  if (e.target.checked) { missions[no] = Date.now(); toast(`第 ${no} 关的动手任务完成，了不起`); } else delete missions[no];
+  if (e.target.checked) { missions[no] = Date.now(); toast(t('toast.missionDone', {n: no})); } else delete missions[no];
   saveProgress();
 });
 $('#tiers-root').addEventListener('click', e => {
@@ -1831,16 +1864,55 @@ async function hydrateCovers() {
 }
 
 // ---------- 启动 ----------
-document.title = BP.pageTitle;
-{
-  const meta = document.querySelector('meta[name="description"]');
-  if (meta) meta.setAttribute('content', BP.track === 'g1'
-    ? 'BiliPicks — 从好奇到会看：给大约 6～7 岁的 6 关小课，故事、小动物、博物馆和简单科学，无推荐算法。'
-    : 'BiliPicks — 初中生学 AI：从好奇到机器学习的 9 关，家长手选，没有推荐算法。');
+function currentCourse() { return courseById(BP.track); }
+function currentCourseTitle() { return tf(currentCourse(), 'title') || BP.label || t('action.pickCourse'); }
+function paintLangSwitch() {
+  const lang = window.BiliPicksI18n ? BiliPicksI18n.lang() : 'zh';
+  const zh = $('#lang-zh'), en = $('#lang-en');
+  if (zh) zh.setAttribute('aria-pressed', lang === 'zh' ? 'true' : 'false');
+  if (en) en.setAttribute('aria-pressed', lang === 'en' ? 'true' : 'false');
 }
+function applyLang() {
+  if (window.BiliPicksI18n) BiliPicksI18n.applyStatic();
+  applyPathLang();
+  paintLangSwitch();
+  paintDoc();
+  paintNav();
+  applyTheme();
+  paintAuto();
+  paintTvButton();
+  paintAccountBtn();
+  renderTrackMenu();
+  if ($('#gate') && !$('#gate').hidden) showGate();
+  if (document.body.classList.contains('ready') && !document.body.classList.contains('picking')) render();
+  if ($('#account-sheet') && !$('#account-sheet').hidden) renderAccount();
+  const tristan = $('#about-tristan');
+  if (tristan) tristan.innerHTML = t('about.tristan') + ' <a href="https://karpathy.ai/tristan-tube/" target="_blank" rel="noopener noreferrer">TristanTube</a>' + t('about.tristanAfter');
+  const adapt = $('#about-adapt');
+  if (adapt) adapt.innerHTML = t('about.creditAdapt') + ' <a href="https://github.com/limin112/bilipicks" target="_blank" rel="noopener noreferrer">limin112/bilipicks</a>' + t('about.creditAdaptAfter') + ' <code>data.js</code> ' + t('about.creditAdaptEnd');
+}
+if (window.BiliPicksI18n) BiliPicksI18n.onChange(applyLang);
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('.lang-switch [data-lang]');
+  if (!b || !window.BiliPicksI18n) return;
+  BiliPicksI18n.setLang(b.getAttribute('data-lang'));
+});
+function paintDoc() {
+  const c = currentCourse();
+  document.title = (c && (tf(c, 'pageTitle') || ('BiliPicks · ' + tf(c, 'title')))) || BP.pageTitle || 'BiliPicks';
+  const meta = document.querySelector('meta[name="description"]');
+  if (meta) {
+    const key = BP.track ? 'meta.' + BP.track : 'meta.description';
+    const msg = window.BiliPicksI18n && BiliPicksI18n.messages[BiliPicksI18n.lang()] && BiliPicksI18n.messages[BiliPicksI18n.lang()][key];
+    meta.setAttribute('content', msg || t('meta.description'));
+  }
+  if ($('#btn-track')) {
+    $('#btn-track').textContent = currentCourseTitle() || t('action.pickCourse');
+    $('#btn-track').setAttribute('aria-label', t('track.current', {name: currentCourseTitle() || t('track.none')}));
+  }
+}
+paintDoc();
 $('#btn-track').hidden = false;
-$('#btn-track').textContent = BP.label || '选课';
-$('#btn-track').setAttribute('aria-label', '当前课程：' + (BP.label || '未选'));
 renderTrackMenu();
 $('#logo').href = './?track=' + BP.track;
 applyTheme();
@@ -1878,20 +1950,20 @@ function paintAccountBtn() {
   if (!b || !bp) return;
   if (bp.mode === 'cloud' && bp.profile) {
     b.textContent = bp.profile.display_name;
-    b.setAttribute('aria-label', '账号，当前是' + bp.profile.display_name);
+    b.setAttribute('aria-label', t('account.ariaNamed', {name: bp.profile.display_name}));
   } else if (bp.needsProfile) {
-    b.textContent = '建档';
-    b.setAttribute('aria-label', '给孩子建档');
+    b.textContent = t('account.create');
+    b.setAttribute('aria-label', t('account.createAria'));
   } else {
-    b.textContent = '登录';
-    b.setAttribute('aria-label', '登录');
+    b.textContent = t('action.signIn');
+    b.setAttribute('aria-label', t('account.signInAria'));
   }
 }
 function courseById(id) {
   return (window.BP.catalog || []).find(c => c.id === id) || null;
 }
 function courseNames(ids) {
-  return (ids || []).map(id => { const c = courseById(id); return c ? c.title : id; }).join('、');
+  return (ids || []).map(id => { const c = courseById(id); return c ? tf(c, 'title') : id; }).join(t('list.join'));
 }
 function stageList() {
   return (window.BiliPicksAccount && BiliPicksAccount.STAGES) || [];
@@ -1904,10 +1976,10 @@ function choiceCard(c, selected, soon) {
   const cls = 'choice' + (on ? ' on' : '') + (soon ? ' soon' : '');
   const pressed = soon ? '' : ` aria-pressed="${on ? 'true' : 'false'}"`;
   const soonAttr = soon ? ' data-soon="1" aria-disabled="true"' : '';
-  const badge = soon ? '<span class="badge">正在准备</span>' : '';
+  const badge = soon ? `<span class="badge">${esc(t('badge.soon'))}</span>` : '';
   const style = c.color ? ` style="--h:${esc(c.color)};--h2:${esc(c.color2 || c.color)}"` : '';
   const ico = c.icon ? `<span class="choice-ico" aria-hidden="true">${esc(c.icon)}</span>` : '';
-  return `<button type="button" class="${cls}" data-track="${esc(c.id)}"${soonAttr}${pressed}${style}>${badge}${ico}<b>${esc(c.title)}</b><span>${esc(c.ages)}</span><small>${esc(c.blurb)}</small></button>`;
+  return `<button type="button" class="${cls}" data-track="${esc(c.id)}"${soonAttr}${pressed}${style}>${badge}${ico}<b>${esc(tf(c, 'title'))}</b><span>${esc(tf(c, 'ages'))}</span><small>${esc(tf(c, 'blurb'))}</small></button>`;
 }
 function coursesForStage(stageId, includeUpcoming) {
   const live = ((window.BP && window.BP.catalog) || []).filter(c => c.stage === stageId);
@@ -1925,8 +1997,8 @@ function renderStageSections(opts) {
     if (!pack.live.length && !pack.soon.length) return;
     const hue = st.color ? ` style="--h:${esc(st.color)}"` : '';
     html += `<section class="stage-block" data-stage="${esc(st.id)}"${hue}>`;
-    html += `<h2>${esc(st.title)} <span>${esc(st.ages)}</span></h2>`;
-    if (st.lede) html += `<p class="stage-lede">${esc(st.lede)}</p>`;
+    html += `<h2>${esc(tf(st, 'title'))} <span>${esc(tf(st, 'ages'))}</span></h2>`;
+    if (st.lede || st.ledeEn) html += `<p class="stage-lede">${esc(tf(st, 'lede'))}</p>`;
     html += '<div class="choices">';
     pack.live.forEach(c => { html += choiceCard(c, pick, false); });
     pack.soon.forEach(c => { html += choiceCard(c, '', true); });
@@ -1947,13 +2019,13 @@ function renderTrackMenu() {
     known[st.id] = true;
     const items = catalog.filter(c => c.stage === st.id);
     if (!items.length) return;
-    html += `<p class="track-stage">${esc(st.title)} · ${esc(st.ages)}</p>`;
+    html += `<p class="track-stage">${esc(tf(st, 'title'))} · ${esc(tf(st, 'ages'))}</p>`;
     html += items.map(c =>
-      `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(c.title)}</b><small>${esc(c.ages)}</small></button>`
+      `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(tf(c, 'title'))}</b><small>${esc(tf(c, 'ages'))}</small></button>`
     ).join('');
   });
   catalog.filter(c => !known[c.stage]).forEach(c => {
-    html += `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(c.title)}</b><small>${esc(c.ages)}</small></button>`;
+    html += `<button type="button" data-track="${esc(c.id)}" class="${c.id === bp.track ? 'on' : ''}"><b>${esc(tf(c, 'title'))}</b><small>${esc(tf(c, 'ages'))}</small></button>`;
   });
   box.innerHTML = html;
 }
@@ -1973,11 +2045,11 @@ function showGate() {
   $('#gate').hidden = false;
   $('#gate-name-field').hidden = !bp.needsProfile;
   if (bp.needsProfile) {
-    $('#gate h1').textContent = '给孩子选课';
-    $('.gate-lead').textContent = '写一个家里的称呼，再选一门或多门课。不写姓名、学校、电话或生日。换课不会清掉已经看过的进度。';
+    $('#gate h1').textContent = t('gate.titleProfile');
+    $('.gate-lead').textContent = t('gate.leadProfile');
   } else {
-    $('#gate h1').textContent = '课程中心';
-    $('.gate-lead').textContent = '按孩子现在的年纪挑一门课。家长看着选；每门课的进度分开留着。';
+    $('#gate h1').textContent = t('gate.title');
+    $('.gate-lead').textContent = t('gate.lead');
   }
   renderGate();
   paintAccountBtn();
@@ -1988,7 +2060,7 @@ function chooseTrack(track) {
   err.hidden = true;
   const job = bp.setTrack(track);
   if (job && job.then) job.then(res => {
-    if (!res || !res.ok) { err.hidden = false; err.textContent = (res && res.error) || '没有打开这门课。'; }
+    if (!res || !res.ok) { err.hidden = false; err.textContent = (res && res.error) || t('gate.openFail'); }
   });
 }
 function startChosenCourses() {
@@ -1996,13 +2068,13 @@ function startChosenCourses() {
   const err = $('#gate-err');
   const ids = $$('#gate .choice.on').map(el => el.dataset.track);
   err.hidden = true;
-  if (!ids.length) { err.hidden = false; err.textContent = '先选一门课。可以多选。'; return; }
+  if (!ids.length) { err.hidden = false; err.textContent = t('gate.pickOne'); return; }
   bp.createProfile($('#gate-name').value, ids[0], ids).then(res => {
     if (!res.ok) { err.hidden = false; err.textContent = res.error; return; }
     bp.needsProfile = false;
     return bp.setTrack(ids[0]);
   }).then(res => {
-    if (res && !res.ok) { err.hidden = false; err.textContent = res.error || '没有打开这门课。'; }
+    if (res && !res.ok) { err.hidden = false; err.textContent = res.error || t('gate.openFail'); }
   });
 }
 function closeAccount() { $('#account-sheet').hidden = true; }
@@ -2018,10 +2090,10 @@ function clockLabel(sec) {
 }
 function enrolledLabel(p) {
   const ids = BiliPicksAccount.profileCourseIds(p);
-  return courseNames(ids) || '还没选课';
+  return courseNames(ids) || t('account.noCourse');
 }
 function kidMark(name) {
-  return esc(String(name || '孩').slice(0, 1));
+  return esc(String(name || t('account.initial')).slice(0, 1));
 }
 function unescapeTitle(raw) {
   try { return JSON.parse('"' + raw + '"'); } catch (e) { return raw; }
@@ -2047,21 +2119,21 @@ function ensureCourseTitles() {
 }
 function renderSwitcher() {
   const bp = window.BP;
-  $('#account-title').textContent = '孩子档案';
+  $('#account-title').textContent = t('account.kids');
   $('#account-sub').textContent = (bp.user && bp.user.email) || '';
   $('#account-back').hidden = true;
   const list = (bp.profiles || []).map(p => {
     const current = bp.profile && bp.profile.id === p.id;
-    return `<li><button type="button" class="kid${current ? ' on' : ''}" data-profile="${esc(p.id)}" aria-current="${current ? 'true' : 'false'}"><span class="kid-mark" aria-hidden="true">${kidMark(p.display_name)}</span><span class="kid-main"><b>${esc(p.display_name)}</b><small>${esc(enrolledLabel(p))}</small></span>${current ? '<span class="kid-now">当前</span>' : ''}</button></li>`;
+    return `<li><button type="button" class="kid${current ? ' on' : ''}" data-profile="${esc(p.id)}" aria-current="${current ? 'true' : 'false'}"><span class="kid-mark" aria-hidden="true">${kidMark(p.display_name)}</span><span class="kid-main"><b>${esc(p.display_name)}</b><small>${esc(enrolledLabel(p))}</small></span>${current ? `<span class="kid-now">${esc(t('account.now'))}</span>` : ''}</button></li>`;
   }).join('');
   const lead = bp.needsProfile || !(bp.profiles || []).length
-    ? '<p class="quiet">还没有孩子。到档案管理里写一个家里的称呼。</p>'
-    : '<p class="quiet">点一个称呼就换成那个孩子。各门课的进度都留着。</p>';
+    ? `<p class="quiet">${esc(t('account.emptyManage'))}</p>`
+    : `<p class="quiet">${esc(t('account.switchHint'))}</p>`;
   accountCard(`${lead}
     <ul class="kids" id="profile-list">${list}</ul>
-    <button type="button" class="btn open-manage" id="open-manage">档案管理</button>
+    <button type="button" class="btn open-manage" id="open-manage">${esc(t('account.manage'))}</button>
     <div class="sheet-foot">
-      <button type="button" class="text-quiet" id="account-out">退出登录</button>
+      <button type="button" class="text-quiet" id="account-out">${esc(t('account.signOut'))}</button>
     </div>`);
   $$('#profile-list [data-profile]').forEach(btn => btn.onclick = () => {
     if (bp.profile && btn.dataset.profile === bp.profile.id) return;
@@ -2077,17 +2149,17 @@ function manageItem(p, bp) {
   const current = bp.profile && bp.profile.id === p.id;
   return `<li class="manage-row">
     <span class="kid-mark" aria-hidden="true">${kidMark(p.display_name)}</span>
-    <span class="kid-main"><b>${esc(p.display_name)}${current ? ' · 当前' : ''}</b><small>${esc(enrolledLabel(p))}</small></span>
+    <span class="kid-main"><b>${esc(p.display_name)}${current ? ' · ' + esc(t('account.now')) : ''}</b><small>${esc(enrolledLabel(p))}</small></span>
     <span class="manage-actions">
-      <button type="button" class="text-add" data-record="${esc(p.id)}">学习记录</button>
-      <button type="button" class="text-danger" data-delete="${esc(p.id)}">删除</button>
+      <button type="button" class="text-add" data-record="${esc(p.id)}">${esc(t('account.records'))}</button>
+      <button type="button" class="text-danger" data-delete="${esc(p.id)}">${esc(t('account.delete'))}</button>
     </span>
   </li>`;
 }
 function manageListHtml(query) {
   const bp = window.BP;
   const rows = BiliPicksAccount.filterProfiles(bp.profiles || [], query);
-  if (!rows.length) return `<li class="quiet">${query ? '没有叫这个的孩子。' : '还没有孩子。'}</li>`;
+  if (!rows.length) return `<li class="quiet">${esc(query ? t('account.noneQuery') : t('account.noneYet'))}</li>`;
   return rows.map(p => manageItem(p, bp)).join('');
 }
 function bindManageList() {
@@ -2099,18 +2171,18 @@ function bindManageList() {
 }
 function renderManage() {
   const bp = window.BP;
-  $('#account-title').textContent = '档案管理';
+  $('#account-title').textContent = t('account.manage');
   $('#account-sub').textContent = '';
   $('#account-back').hidden = false;
   const adding = !!accountPane.adding;
-  accountCard(`<p class="quiet">可以查找称呼、新增孩子、查看学习记录，或删除档案。选课请回到首页。</p>
-    <div class="manage-search"><input id="manage-q" type="search" placeholder="查找称呼" aria-label="查找称呼" value="${esc(accountPane.query || '')}"></div>
+  accountCard(`<p class="quiet">${esc(t('account.manageLead'))}</p>
+    <div class="manage-search"><input id="manage-q" type="search" placeholder="${esc(t('account.findName'))}" aria-label="${esc(t('account.findName'))}" value="${esc(accountPane.query || '')}"></div>
     <ul class="manage-list" id="manage-list">${manageListHtml(accountPane.query || '')}</ul>
-    <button type="button" class="text-add" id="add-child-toggle" ${adding ? 'hidden' : ''}>新增</button>
+    <button type="button" class="text-add" id="add-child-toggle" ${adding ? 'hidden' : ''}>${esc(t('account.add'))}</button>
     <form id="profile-form" class="add-box" ${adding ? '' : 'hidden'}>
-      <label class="field"><span>家里的称呼</span><input name="name" maxlength="24" autocomplete="off" placeholder="比如姐姐、弟弟。不是姓名" required></label>
-      <button class="btn primary" type="submit">保存这个孩子</button>
-      <p class="quiet">只写称呼，不写姓名、学校、电话或生日。新建后先记着现在这门课，要换课回到首页选。</p>
+      <label class="field"><span>${esc(t('account.nickname'))}</span><input name="name" maxlength="24" autocomplete="off" placeholder="${esc(t('account.nicknamePh2'))}" required></label>
+      <button class="btn primary" type="submit">${esc(t('account.saveChild'))}</button>
+      <p class="quiet">${esc(t('account.addHint'))}</p>
     </form>
     <p class="err" id="account-err" hidden></p>`);
   bindManageList();
@@ -2142,7 +2214,7 @@ function renderManage() {
       if (!res || !res.ok) {
         if (submit) submit.disabled = false;
         er.hidden = false;
-        er.textContent = (res && res.error) || '没有建成。';
+        er.textContent = (res && res.error) || t('account.createFail');
         return;
       }
       if (res.active) {
@@ -2161,32 +2233,32 @@ function renderManage() {
 }
 function recordHtml(rec) {
   const courses = (rec && rec.courses) || [];
-  if (!courses.length) return '<p class="quiet">还没有学习记录。回到首页选一门课，看完点「看完了」，就会记在这里。</p>';
+  if (!courses.length) return `<p class="quiet">${esc(t('account.noRecords'))}</p>`;
   return courses.map(c => {
     const videos = c.videos || [];
     const last = c.last && (c.last.seconds > 0 || c.last.at) ? c.last : null;
     const lastName = last ? (last.title || last.id || '') : '';
-    const lastLine = last ? `<p class="quiet">上次看到 ${esc(clockLabel(last.seconds))}${lastName ? ' · ' + esc(lastName) : ''}</p>` : '';
+    const lastLine = last ? `<p class="quiet">${esc(t('account.lastSeen', {time: clockLabel(last.seconds)}))}${lastName ? ' · ' + esc(lastName) : ''}</p>` : '';
     const items = videos.length
       ? `<ul class="record-list">${videos.map(v => {
           const title = v.title || v.id;
           const meta = v.completed
-            ? ('看完' + (v.positionSeconds > 0 ? ' · 播到 ' + clockLabel(v.positionSeconds) : ''))
-            : (v.positionSeconds > 0 ? '看到 ' + clockLabel(v.positionSeconds) : '有记录');
+            ? (t('account.finished') + (v.positionSeconds > 0 ? ' · ' + t('account.playedTo', {time: clockLabel(v.positionSeconds)}) : ''))
+            : (v.positionSeconds > 0 ? t('account.watchedTo', {time: clockLabel(v.positionSeconds)}) : t('account.hasRecord'));
           return `<li><b>${esc(title)}</b><span>${esc(meta)}</span></li>`;
         }).join('')}</ul>`
-      : '<p class="quiet">这门课还没有观看记录。</p>';
-    return `<section class="record-course"><b>${esc(c.title || c.id)}</b><p class="quiet">看完 ${c.completedCount} 条</p>${lastLine}${items}</section>`;
+      : `<p class="quiet">${esc(t('account.noWatch'))}</p>`;
+    return `<section class="record-course"><b>${esc(tf(c, 'title') || c.title || c.id)}</b><p class="quiet">${esc(t('account.finishedCount', {n: c.completedCount}))}</p>${lastLine}${items}</section>`;
   }).join('');
 }
 function renderRecord() {
   const bp = window.BP;
   const p = (bp.profiles || []).find(k => k.id === accountPane.id);
-  $('#account-title').textContent = '学习记录';
+  $('#account-title').textContent = t('account.records');
   $('#account-sub').textContent = (p && p.display_name) || '';
   $('#account-back').hidden = false;
   if (accountPane.loading) {
-    accountCard('<p class="quiet">正在读已经记下的进度…</p>');
+    accountCard(`<p class="quiet">${esc(t('account.recordsLoading'))}</p>`);
     return;
   }
   if (accountPane.error) {
@@ -2208,7 +2280,7 @@ function openRecord(id) {
     const res = pair[0];
     if (!res || !res.ok) {
       accountPane.loading = false;
-      accountPane.error = (res && res.error) || '没有读到学习记录。';
+      accountPane.error = (res && res.error) || t('account.recordsFail');
       renderAccount();
       return;
     }
@@ -2220,15 +2292,15 @@ function openRecord(id) {
 function renderConfirm() {
   const bp = window.BP;
   const p = (bp.profiles || []).find(k => k.id === accountPane.id);
-  const name = (p && p.display_name) || '这个孩子';
-  $('#account-title').textContent = '档案管理';
+  const name = (p && p.display_name) || t('account.thisChild');
+  $('#account-title').textContent = t('account.manage');
   $('#account-sub').textContent = '';
   $('#account-back').hidden = false;
   accountCard(`<div class="confirm-box">
-      <p>删除「${esc(name)}」的档案和云端进度？这台设备上的访客记录还在。</p>
+      <p>${t('account.deleteAsk', {name: esc(name)})}</p>
       <div class="hero-actions">
-        <button type="button" class="btn" id="delete-cancel">取消</button>
-        <button type="button" class="btn danger" id="delete-confirm">删除档案</button>
+        <button type="button" class="btn" id="delete-cancel">${esc(t('account.cancel'))}</button>
+        <button type="button" class="btn danger" id="delete-confirm">${esc(t('account.deleteProfile'))}</button>
       </div>
       <p class="err" id="account-err" hidden></p>
     </div>`);
@@ -2245,23 +2317,23 @@ function renderConfirm() {
       if (res && res.ok) return;
       btn.disabled = false;
       er.hidden = false;
-      er.textContent = (res && res.error) || '没有删掉，请稍后再试。';
+      er.textContent = (res && res.error) || t('account.deleteFail');
     });
   };
 }
 function renderAccount() {
   const bp = window.BP;
-  const note = '不满 14 周岁的孩子，请由家长或监护人注册并管理这个账号（个人信息保护法）。这里只保存监护人邮箱和家里的称呼，不收集姓名、学校、电话或出生日期。';
+  const note = t('account.pipl');
   $('#account-sub').textContent = '';
   $('#account-back').hidden = true;
   if (!bp.configured) {
-    $('#account-title').textContent = '云端登录';
-    accountCard(`<p>云端登录还没配置。公开的 GitHub Pages 使用仓库里的 <b>config.public.js</b>（anon 公钥，数据由行级安全保护）。本机的 <b>config.js</b> 可以覆盖它。两份现在都不可用，可以继续用访客模式。</p><p class="quiet">进度只存在这台设备上。每门课各记各的。</p>`);
+    $('#account-title').textContent = t('account.cloudTitle');
+    accountCard(`<p>${t('account.cloudMissing')}</p><p class="quiet">${esc(t('account.cloudMissing2'))}</p>`);
     return;
   }
   if (bp.offline) {
-    $('#account-title').textContent = '云端登录';
-    accountCard('<p>刚才没连上云端，这台设备先按访客使用。进度还在浏览器里，连上之后再登录即可同步。</p>');
+    $('#account-title').textContent = t('account.cloudTitle');
+    accountCard(`<p>${esc(t('account.offlineGuest'))}</p>`);
     return;
   }
   if (bp.mode === 'cloud' && bp.user) {
@@ -2270,14 +2342,14 @@ function renderAccount() {
     if (accountPane.name === 'confirm') return renderConfirm();
     return renderSwitcher();
   }
-  $('#account-title').textContent = '家长登录';
-  accountCard(`<p class="quiet">一个邮箱下面可以有几个孩子，进度按孩子、按课分开。</p>
+  $('#account-title').textContent = t('account.parentSignIn');
+  accountCard(`<p class="quiet">${esc(t('account.authLead'))}</p>
     <form id="auth-form">
-      <label class="field"><span>邮箱</span><input name="email" type="email" autocomplete="username" required></label>
-      <label class="field"><span>密码</span><input name="password" type="password" autocomplete="current-password" minlength="6" required></label>
+      <label class="field"><span>${esc(t('account.email'))}</span><input name="email" type="email" autocomplete="username" required></label>
+      <label class="field"><span>${esc(t('account.password'))}</span><input name="password" type="password" autocomplete="current-password" minlength="6" required></label>
       <div class="hero-actions">
-        <button class="btn primary" type="submit" id="auth-submit">登录</button>
-        <button class="btn" type="button" id="auth-mode">改为注册</button>
+        <button class="btn primary" type="submit" id="auth-submit">${esc(t('action.signIn'))}</button>
+        <button class="btn" type="button" id="auth-mode">${esc(t('account.toRegister'))}</button>
       </div>
     </form>
     <p class="err" id="account-err" hidden></p>
@@ -2286,8 +2358,8 @@ function renderAccount() {
   let registering = false;
   $('#auth-mode').onclick = () => {
     registering = !registering;
-    $('#auth-submit').textContent = registering ? '注册' : '登录';
-    $('#auth-mode').textContent = registering ? '改为登录' : '改为注册';
+    $('#auth-submit').textContent = registering ? t('account.register') : t('action.signIn');
+    $('#auth-mode').textContent = registering ? t('account.toSignIn') : t('account.toRegister');
     $('#auth-form [name=password]').setAttribute('autocomplete', registering ? 'new-password' : 'current-password');
   };
   $('#auth-form').onsubmit = e => {
@@ -2301,7 +2373,7 @@ function renderAccount() {
       if (!res.ok) { er.hidden = false; er.textContent = res.error; return; }
       if (res.confirm) {
         $('#auth-hint').hidden = false;
-        $('#auth-hint').textContent = '注册邮件已发出。请到邮箱里确认，然后再回来登录。';
+        $('#auth-hint').textContent = t('account.mailSent');
         return;
       }
       if (res.needsProfile) {
@@ -2324,10 +2396,10 @@ function maybeShowMerge() {
   const options = plan.profiles.map(p => `<option value="${esc(p.id)}">${esc(p.display_name)}</option>`).join('');
   const rows = plan.courses || [];
   $('#merge-fields').innerHTML = rows.map(c =>
-    `<label class="field"><span>${esc(c.title)}，这台设备有 ${c.count} 条记录</span><select id="merge-${esc(c.id)}">${options}<option value="">不合并</option></select></label>`
+    `<label class="field"><span>${esc(t('account.mergeCount', {title: (function(id, fallback){ var x = courseById(id); return x ? tf(x, 'title') : fallback; })(c.id, c.title), n: c.count}))}</span><select id="merge-${esc(c.id)}">${options}<option value="">${esc(t('account.mergeNone'))}</option></select></label>`
   ).join('');
   rows.forEach(c => { const sel = $('#merge-' + c.id); if (sel) sel.value = plan.profileId; });
-  $('#merge-lead').textContent = '登录前记在这台设备上的进度，可以并进某个孩子的档案。云端已经有的记录会保留，不会被清掉。不同的课可以交给不同的孩子。';
+  $('#merge-lead').textContent = t('account.mergeLead');
   $('#merge-err').hidden = true;
   $('#merge-modal').hidden = false;
 }
@@ -2342,7 +2414,7 @@ $('#gate').addEventListener('click', e => {
   const b = e.target.closest('[data-track]');
   if (!b || !window.BP) return;
   if (b.classList.contains('soon') || b.dataset.soon) {
-    toast('这门课还在挑选视频，好了会放进课程中心。', 3600);
+    toast(t('soon.toast'), 3600);
     return;
   }
   if (window.BP.needsProfile) {
@@ -2370,10 +2442,10 @@ $('#track-menu').addEventListener('click', e => {
   const job = window.BP.setTrack(b.dataset.track);
   if (job && job.then) job.then(res => {
     if (!res || res.ok) return;
-    const t = $('#toast');
-    if (!t) return;
-    t.textContent = res.error || '没有换成这门课';
-    t.classList.add('show');
+    const el = $('#toast');
+    if (!el) return;
+    el.textContent = res.error || t('account.switchFail');
+    el.classList.add('show');
   });
 });
 document.addEventListener('click', e => { if (!e.target.closest('.track-wrap')) $('#track-menu').hidden = true; });
@@ -2386,7 +2458,7 @@ $('#merge-go').onclick = () => {
   });
   window.BP.mergeGuest(choices).then(res => {
     const er = $('#merge-err');
-    if (!res.ok) { er.hidden = false; er.textContent = res.error || '没有合并成功'; return; }
+    if (!res.ok) { er.hidden = false; er.textContent = res.error || t('account.mergeFail'); return; }
     location.reload();
   });
 };
@@ -2411,12 +2483,12 @@ BiliPicksAccount.open().then(bp => {
   s.onerror = () => {
     document.body.classList.add('ready');
     $('#boot-cover').hidden = false;
-    $('#boot-cover .gate-lead').textContent = '清单没有加载出来。请刷新再试。';
+    $('#boot-cover .gate-lead').textContent = t('boot.catalogFail');
   };
   document.body.appendChild(s);
 }).catch(() => {
   document.body.classList.add('ready');
-  $('#boot-cover .gate-lead').textContent = '页面没有打开。请刷新再试。';
+  $('#boot-cover .gate-lead').textContent = t('boot.pageFail');
 });
 </script>
 </body>

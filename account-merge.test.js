@@ -137,4 +137,35 @@ assert(context.localStorage.getItem('bilipicks-old-demo-done-v1') === '{"a":1}',
 assert(context.localStorage.getItem('bilipicks-c-demo-missions-v1') === '{"kept":1}', 'existing new key is not overwritten');
 delete courses.demo;
 
+
+assert(courses.y2.titleEn === 'Seeing the World at Two', 'toddler English title');
+assert(courses.g1.titleEn === 'From Curiosity to Looking Closely', 'grade-1 English title');
+assert(courses.jh.titleEn === 'AI for Middle School', 'junior English title');
+assert(upcoming.some(c => c.id === 'snd' && c.titleEn === 'Listen, the World Is Sounding'), 'upcoming snd English title');
+assert(upcoming.some(c => c.id === 'why' && c.titleEn === 'Ask Why'), 'upcoming why English title');
+
+const i18nCode = fs.readFileSync(__dirname + '/i18n.js', 'utf8');
+const ictx = {
+  window: {},
+  console: console,
+  localStorage: { getItem: function () { return 'zh'; }, setItem: function () {} },
+  navigator: { language: 'zh-CN' }
+};
+ictx.window = ictx;
+vm.createContext(ictx);
+vm.runInContext(i18nCode, ictx);
+const I18n = ictx.BiliPicksI18n;
+assert(I18n && I18n.messages && I18n.messages.zh && I18n.messages.en, 'i18n dictionary loaded');
+const zhKeys = Object.keys(I18n.messages.zh);
+const enKeys = Object.keys(I18n.messages.en);
+const missingEn = zhKeys.filter(k => !Object.prototype.hasOwnProperty.call(I18n.messages.en, k));
+const missingZh = enKeys.filter(k => !Object.prototype.hasOwnProperty.call(I18n.messages.zh, k));
+assert(missingEn.length === 0, 'every zh key has English: ' + missingEn.slice(0, 8).join(','));
+assert(missingZh.length === 0, 'every en key has Chinese: ' + missingZh.slice(0, 8).join(','));
+I18n.setLang('en', true);
+assert(I18n.t('gate.title') === 'Course Center', 'English course center title');
+assert(I18n.t('soon.toast').indexOf('still being curated') >= 0, 'English upcoming toast');
+I18n.setLang('zh', true);
+assert(I18n.t('gate.title') === '课程中心', 'Chinese course center title stays the source text');
+
 if (!process.exitCode) console.log('merge ok');

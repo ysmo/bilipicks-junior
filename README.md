@@ -19,6 +19,8 @@
 - **听，世界在响**（幼儿，大约 3～5 岁）。雨、鸟、虫鸣，还有厨房里的声音。
 - **问个为什么**（小学，大约 8～11 岁）。光、水、磁铁，和博物馆里的旧东西。
 
+本站支持中文和 English。网页顶栏有「中文 | English」开关，电视版在设置里也可以切换。选择记在这台浏览器里（`bilipicks-lang`）。没有选过时，浏览器语言以 zh 开头就用中文，否则用英文。
+
 公开页面：<https://ysmo.github.io/bilipicks-junior/>。
 
 本站改编自实践哥 Li 的 MIT 开源项目 [limin112/bilipicks](https://github.com/limin112/bilipicks)，不是原作者的官方站点。原版面向小升初（五六年级～初一），示范站在 <https://minlibuilds.com/bili/>。
