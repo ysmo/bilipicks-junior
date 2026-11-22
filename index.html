@@ -632,8 +632,8 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
         <li><strong>电脑</strong>：用滚轮，或者按 <kbd>J</kbd> <kbd>K</kbd> 切换上一条下一条，切过去就自动带声音播放。快捷键：<kbd>A</kbd> 开关自动播放，<kbd>L</kbd> 播放列表，<span class="pages-only"><kbd>H</kbd> 去 B 站看高清，</span><kbd>D</kbd> 深色模式。</li>
         <li class="pages-only"><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。滑到以后播放器已经加载好。iPhone、iPad 上要点一下画面才出声播放，这是苹果不允许网页自动开声音，本页改不了。手机横过来，视频在左边，说明在右边。</li>
         <li class="lan-only" hidden><strong>手机、平板</strong>：往上滑是下一条，往下滑是上一条。如果没有自动开播，点一下画面即可。手机横过来，视频在左边，说明在右边。</li>
-        <li class="pages-only"><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的镜像，不要用「只投这个视频」：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</li>
-        <li class="lan-only" hidden><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的镜像，不要用「只投这个视频」：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。镜像时手机要一直开着这一页。</li>
+        <li class="pages-only"><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的「屏幕镜像」，不要用视频右下角的隔空播放或「只投这个视频」（那样电视通常只有声音）：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。B 站官方播放器在手机上不提供把这一条视频直接隔空播放（AirPlay）或 Cast 到电视的按钮，播放器角落的全屏也常常没反应；B 站 App 里不少片子还会提示「无法投屏」。那是 B 站和系统的限制，这个页面改不了，只能把铺满之后的画面镜像过去。镜像时手机要一直开着这一页。</li>
+        <li class="lan-only" hidden><strong>手机投到电视</strong>：播放时点「投屏」（外接键盘也可以按 <kbd>T</kbd>）。页面会铺满，并尽量收起浏览器自己的边栏。先点一下画面开始播放，再把手机横过来。然后用手机系统的「屏幕镜像」，不要用视频右下角的隔空播放或「只投这个视频」（那样电视通常只有声音）：iPhone 从右上角拉出控制中心，点「屏幕镜像」；安卓在系统里找「投屏」「镜像」或「智慧屏」，选镜像整个屏幕。镜像时手机要一直开着这一页。</li>
         <li><strong>电视、投影仪</strong>：用遥控器的打开<a href="tv.html"><strong>电视版</strong></a>：一格一格的方块，方向键挑、<kbd>OK</kbd> 播放；播放时 <kbd>▲</kbd> 标记看完，<kbd>▼</kbd> 选集、换一条，返回键回首页；<kbd>◀</kbd> <kbd>▶</kbd> 在应用里是快退 / 快进，在浏览器里是换上一条 / 下一条。看完的进度和这里共用。安卓电视、投影仪可以装 BiliPicks 电视版应用（安装方法见<a href="https://github.com/limin112/bilipicks/tree/main/android" target="_blank" rel="noopener noreferrer">开源仓库</a>），打开就是电视版，<kbd>OK</kbd> 键能暂停，<kbd>◀</kbd> <kbd>▶</kbd> 能快退快进。</li>
         <li><strong>电脑接电视、投屏</strong>：在电脑上按 <kbd>T</kbd> 或点「大屏模式」，只留视频和一条控制栏，<kbd>←</kbd> <kbd>→</kbd> 切换，<kbd>Esc</kbd> 退出。电脑上的大屏模式不会强行进入浏览器全屏。</li>
         <li><strong>换设备</strong>：<span id="about-sync"></span></li>
@@ -690,7 +690,7 @@ html.lan body.tv .player video,html.lan body.tv-cast .player video{
   <span class="hint">← → 切换，H 去 B 站看高清，Esc 退出</span>
   <a class="btn sm" id="tv-hd" target="_blank" rel="noopener noreferrer">去 B 站看高清</a>
   <button type="button" class="btn sm" id="tv-next">下一条</button>
-  <p class="cast-hint" id="cast-hint">先点画面播放，再横过来。用系统「屏幕镜像」，不要选只投视频。B 站不能直接把这条投到电视。</p>
+  <p class="cast-hint" id="cast-hint">先点画面播放，再横过来。请用控制中心「屏幕镜像」。不要用视频右下角的隔空播放，那样电视通常只有声音。</p>
   <button type="button" class="btn sm" id="tv-exit"><span class="label-desk">退出大屏</span><span class="label-cast">退出投屏</span></button>
 </div>
 
@@ -909,7 +909,7 @@ function applyLanChrome() {
   const hint = $('#tv-bar .hint');
   if (hint) hint.textContent = '← → 切换，Esc 退出';
   const cast = $('#cast-hint');
-  if (cast) cast.textContent = '先点画面播放，再横过来。用系统「屏幕镜像」，不要选只投视频。';
+  if (cast) cast.textContent = '先点画面播放，再横过来。请用控制中心「屏幕镜像」。不要用视频右下角的隔空播放，那样电视通常只有声音。';
   const hd = $('#tv-hd');
   if (hd) hd.hidden = true;
 }
@@ -1248,6 +1248,7 @@ function mountLan(slide, v, autoplay) {
   if (v.cover) video.poster = lanCover(v.cover);
   box.innerHTML = '';
   box.appendChild(video);
+  bindAirPlayHint(video);
   const saved = position[v.id];
   video.addEventListener('loadedmetadata', () => {
     if (saved && saved.t > 5 && (!video.duration || saved.t < video.duration - 8)) {
@@ -1435,6 +1436,21 @@ function lockLandscape() {
     if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
   } catch (e) {}
 }
+
+function bindAirPlayHint(video) {
+  if (!video || video._airplayHint) return;
+  video._airplayHint = true;
+  const warn = () => {
+    if (video.webkitCurrentPlaybackTargetIsWireless) {
+      toast('电视若只有声音，请退出隔空播放，改用控制中心的「屏幕镜像」');
+    }
+  };
+  video.addEventListener('webkitcurrentplaybacktargetiswirelesschange', warn);
+  warn();
+}
+function remindScreenMirror() {
+  toast('请用控制中心「屏幕镜像」。视频里的隔空播放常常只有声音，没有画面');
+}
 function activeWatchVideo() {
   return document.querySelector('.slide.active .player video') || document.querySelector('.player video');
 }
@@ -1532,8 +1548,10 @@ function setTV(on) {
   if (on) {
     closeSheet();
     mount(slideEl(state.idx), feedList[state.idx], true);
-    if (cast) enterCastStage();
-    else leaveCastStage();
+    if (cast) {
+      enterCastStage();
+      remindScreenMirror();
+    } else leaveCastStage();
   } else {
     leaveCastStage();
   }
