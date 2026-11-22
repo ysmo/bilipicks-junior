@@ -1,18 +1,51 @@
 /* BiliPicks 账号和进度。
-   访客继续用原来的 localStorage（小学 bilipicks-g1-*，初中 bilipicks-jh-*）。
+   一个网站里有多门课。访客继续用原来的 localStorage
+   （从好奇到会看：bilipicks-g1-*，初中生学 AI：bilipicks-jh-*）。
+   换一门课不会清掉另一门课的进度。
    公开页面用 config.public.js 里的 Supabase 网址和 anon 公钥；本机的 config.js 可以覆盖。
    只使用 anon 公钥。换一个 Supabase 项目，或换成同一套 Auth / REST 的服务时，改配置文件即可。
-   电视版会加载这个文件，所以不用 ?. 、?? 这些较新的语法。 */
+   电视版会加载这个文件，所以不用 ?. 、?? 这些较新的语法。
+
+   再加一门课：在 COURSES 里加一项（id、标题、清单文件、localStorage 前缀）。
+   进度按课程 id 分开存放。旧键要接着用的话，把 legacyPrefix 设成原来的前缀，
+   打开页面时会拷到新前缀，不会删掉旧键。 */
 (function (global) {
-  var TRACKS = {
-    g1: { id: 'g1', label: '小学', title: '从好奇到会看', pageTitle: 'BiliPicks · 从好奇到会看', file: 'data-g1.js', prefix: 'bilipicks-g1' },
-    jh: { id: 'jh', label: '初中', title: '从好奇到机器学习', pageTitle: 'BiliPicks · 从好奇到机器学习', file: 'data.js', prefix: 'bilipicks-jh' }
+  var COURSES = {
+    g1: {
+      id: 'g1',
+      title: '从好奇到会看',
+      ages: '大约 6～7 岁',
+      blurb: '故事、小动物、博物馆，和简单的「为什么」。6 关，现在就能看。',
+      pageTitle: 'BiliPicks · 从好奇到会看',
+      file: 'data-g1.js',
+      prefix: 'bilipicks-g1',
+      legacyPrefix: 'bilipicks-g1',
+      icon: '📖',
+      color: '#2fa866',
+      color2: '#1d7446'
+    },
+    jh: {
+      id: 'jh',
+      title: '初中生学 AI',
+      ages: '大约 12～15 岁',
+      blurb: '从好奇走到机器学习。9 关；学过函数再看后面几关更顺。',
+      pageTitle: 'BiliPicks · 初中生学 AI',
+      file: 'data.js',
+      prefix: 'bilipicks-jh',
+      legacyPrefix: 'bilipicks-jh',
+      icon: '🧠',
+      color: '#2f86e0',
+      color2: '#1d5ea8'
+    }
   };
+  var COURSE_ORDER = ['g1', 'jh'];
+  var GUEST_SUFFIXES = ['done-v1', 'missions-v1', 'theme', 'autoplay', 'covers-v1', 'pos-v1'];
   var TRACK_KEY = 'bilipicks-track';
   var AUTH_KEY = 'bilipicks-auth-v1';
   var PROFILE_KEY = 'bilipicks-profile-v1';
   var CACHE_KEY = 'bilipicks-cloud-v1';
   var MERGE_KEY = 'bilipicks-merge-v1';
+  var PENDING_KEY = 'bilipicks-pending-courses-v1';
 
   var config = null;
   var session = null;
@@ -20,6 +53,8 @@
   var profile = null;
   var mode = 'guest';
   var currentTrack = '';
+  var coursesColumn = true;
+  var cloudProfileId = '';
   var cloudData = emptyData();
   var cloudBase = emptyData();
   var opened = null;
@@ -28,8 +63,82 @@
   var pollTimer = null;
   var pulling = false;
 
+  function courseIdOk(id) {
+    id = String(id || '');
+    if (!/^[a-z0-9][a-z0-9_-]{0,31}$/.test(id)) return false;
+    if (id === 'constructor' || id === 'prototype') return false;
+    return true;
+  }
+  function courseIds() {
+    var ids = [];
+    var i, id;
+    for (i = 0; i < COURSE_ORDER.length; i++) {
+      if (COURSES[COURSE_ORDER[i]]) ids.push(COURSE_ORDER[i]);
+    }
+    for (id in COURSES) {
+      if (Object.prototype.hasOwnProperty.call(COURSES, id) && ids.indexOf(id) < 0 && courseIdOk(id)) ids.push(id);
+    }
+    return ids;
+  }
+  function coursePublic(id) {
+    var c = COURSES[id];
+    return {
+      id: c.id,
+      title: c.title,
+      ages: c.ages,
+      blurb: c.blurb,
+      icon: c.icon,
+      color: c.color,
+      color2: c.color2
+    };
+  }
+  function courseList() {
+    var out = [];
+    courseIds().forEach(function (id) { out.push(coursePublic(id)); });
+    return out;
+  }
+  function publicProfile(p) {
+    return {
+      id: p.id,
+      display_name: p.display_name,
+      track: p.track,
+      courses: (p.courses || []).slice()
+    };
+  }
+  function listIds(raw) {
+    var out = [];
+    var i, id;
+    if (typeof raw === 'string') {
+      raw = raw.replace(/[{}"]/g, '');
+      raw = raw ? raw.split(',') : [];
+    }
+    if (!raw || typeof raw.length !== 'number') return out;
+    for (i = 0; i < raw.length; i++) {
+      id = String(raw[i] || '').toLowerCase().replace(/^\s+|\s+$/g, '');
+      if (courseIdOk(id) && out.indexOf(id) < 0) out.push(id);
+    }
+    return out;
+  }
+  function sameList(a, b) {
+    var i;
+    a = a || [];
+    b = b || [];
+    if (a.length !== b.length) return false;
+    for (i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+  }
+  function sameSet(a, b) {
+    var i;
+    a = a || [];
+    b = b || [];
+    if (a.length !== b.length) return false;
+    for (i = 0; i < a.length; i++) if (b.indexOf(a[i]) < 0) return false;
+    return true;
+  }
+
   function storageKeys(track) {
-    var p = TRACKS[track].prefix;
+    var c = COURSES[track];
+    var p = c ? c.prefix : ('bilipicks-c-' + track);
     return {
       done: p + '-done-v1',
       missions: p + '-missions-v1',
@@ -39,12 +148,30 @@
       position: p + '-pos-v1'
     };
   }
+  function migrateGuestStorage() {
+    courseIds().forEach(function (id) {
+      var c = COURSES[id];
+      if (!c || !c.legacyPrefix || c.legacyPrefix === c.prefix) return;
+      GUEST_SUFFIXES.forEach(function (name) {
+        var from = c.legacyPrefix + '-' + name;
+        var to = c.prefix + '-' + name;
+        try {
+          if (localStorage.getItem(to) == null) {
+            var v = localStorage.getItem(from);
+            if (v != null) localStorage.setItem(to, v);
+          }
+        } catch (e) {}
+      });
+    });
+  }
 
   function emptyTrack() {
     return { done: {}, missions: {}, position: {}, autoplay: null, autoplayAt: 0, theme: null, themeAt: 0 };
   }
   function emptyData() {
-    return { tracks: { g1: emptyTrack(), jh: emptyTrack() } };
+    var tracks = {};
+    courseIds().forEach(function (id) { tracks[id] = emptyTrack(); });
+    return { selected: [], selectedAt: 0, tracks: tracks };
   }
   function clone(v) {
     return JSON.parse(JSON.stringify(v == null ? null : v));
@@ -74,10 +201,16 @@
   function normalizeData(raw) {
     var out = emptyData();
     var tracks = raw && raw.tracks;
-    if (tracks) {
-      out.tracks.g1 = normalizeTrack(tracks.g1);
-      out.tracks.jh = normalizeTrack(tracks.jh);
+    var id;
+    if (tracks && typeof tracks === 'object') {
+      for (id in tracks) {
+        if (!Object.prototype.hasOwnProperty.call(tracks, id)) continue;
+        if (!courseIdOk(id)) continue;
+        out.tracks[id] = normalizeTrack(tracks[id]);
+      }
     }
+    out.selected = listIds(raw && raw.selected);
+    if (raw && typeof raw.selectedAt === 'number') out.selectedAt = raw.selectedAt;
     return out;
   }
 
@@ -154,16 +287,40 @@
       autoplayAt: typeof autoplay === 'boolean' ? autoAt : 0
     };
   }
+  function mergeSelected(base, local, remote) {
+    var ls = local.selected || [];
+    var rs = remote.selected || [];
+    var bs = base.selected || [];
+    var pickL = true;
+    if (sameList(ls, rs)) pickL = true;
+    else if (!ls.length && rs.length) pickL = false;
+    else if (!rs.length && ls.length) pickL = true;
+    else if (sameList(bs, ls) && !sameList(bs, rs)) pickL = false;
+    else if (sameList(bs, rs) && !sameList(bs, ls)) pickL = true;
+    else pickL = (local.selectedAt || 0) >= (remote.selectedAt || 0);
+    return {
+      selected: (pickL ? ls : rs).slice(),
+      selectedAt: pickL ? (local.selectedAt || 0) : (remote.selectedAt || 0)
+    };
+  }
   function mergeData(base, local, remote) {
+    var ids = {};
+    var id, picked;
+    var out = { selected: [], selectedAt: 0, tracks: {} };
     base = normalizeData(base);
     local = normalizeData(local);
     remote = normalizeData(remote);
-    return {
-      tracks: {
-        g1: mergeTrackState(base.tracks.g1, local.tracks.g1, remote.tracks.g1),
-        jh: mergeTrackState(base.tracks.jh, local.tracks.jh, remote.tracks.jh)
-      }
-    };
+    for (id in base.tracks) if (Object.prototype.hasOwnProperty.call(base.tracks, id)) ids[id] = 1;
+    for (id in local.tracks) if (Object.prototype.hasOwnProperty.call(local.tracks, id)) ids[id] = 1;
+    for (id in remote.tracks) if (Object.prototype.hasOwnProperty.call(remote.tracks, id)) ids[id] = 1;
+    for (id in ids) {
+      if (!Object.prototype.hasOwnProperty.call(ids, id) || !courseIdOk(id)) continue;
+      out.tracks[id] = mergeTrackState(base.tracks[id], local.tracks[id], remote.tracks[id]);
+    }
+    picked = mergeSelected(base, local, remote);
+    out.selected = picked.selected;
+    out.selectedAt = picked.selected.length ? picked.selectedAt : 0;
+    return out;
   }
 
   function readJson(key) {
@@ -194,6 +351,7 @@
   function writeGuest(track) {
     var keys = storageKeys(track);
     var tr = cloudData.tracks[track];
+    if (!tr) return;
     try {
       localStorage.setItem(keys.done, JSON.stringify(tr.done || {}));
       localStorage.setItem(keys.missions, JSON.stringify(tr.missions || {}));
@@ -208,12 +366,18 @@
   }
   function guestFingerprint() {
     function ids(obj) { return Object.keys(obj || {}).sort().join(','); }
-    var g1 = readGuest('g1');
-    var jh = readGuest('jh');
-    return [
-      ids(g1.done), ids(g1.missions), ids(g1.position),
-      ids(jh.done), ids(jh.missions), ids(jh.position)
-    ].join('|');
+    var parts = [];
+    courseIds().forEach(function (id) {
+      var g = readGuest(id);
+      parts.push(ids(g.done), ids(g.missions), ids(g.position));
+    });
+    return parts.join('|');
+  }
+  function guestHasProgress() {
+    var parts = guestFingerprint().split('|');
+    var i;
+    for (i = 0; i < parts.length; i++) if (parts[i]) return true;
+    return false;
   }
   function mergeMarkId() {
     if (!session || !profile) return '';
@@ -232,23 +396,37 @@
     if (q === 'jh' || q === 'junior' || q === 'chuzhong') return 'jh';
     return '';
   }
+  function knownTrack(raw) {
+    var id = normalizeTrackId(raw);
+    if (id && COURSES[id]) return id;
+    id = String(raw || '').toLowerCase();
+    if (COURSES[id]) return id;
+    return '';
+  }
+  function storedTrack(raw) {
+    var known = knownTrack(raw);
+    if (known) return known;
+    var id = String(raw || '').toLowerCase();
+    if (courseIdOk(id)) return id;
+    return '';
+  }
   function trackFromUrl() {
-    try { return normalizeTrackId(new URLSearchParams(location.search).get('track')); }
+    try { return knownTrack(new URLSearchParams(location.search).get('track')); }
     catch (e) { return ''; }
   }
   function rememberedTrack() {
-    try { return normalizeTrackId(localStorage.getItem(TRACK_KEY)); }
+    try { return knownTrack(localStorage.getItem(TRACK_KEY)); }
     catch (e) { return ''; }
   }
   function rememberTrack(track) {
-    if (!TRACKS[track]) return;
+    if (!COURSES[track]) return;
     try { localStorage.setItem(TRACK_KEY, track); } catch (e) {}
   }
   function peekTrack() {
     return trackFromUrl() || rememberedTrack();
   }
   function fileFor(track) {
-    return TRACKS[track] ? TRACKS[track].file : '';
+    return COURSES[track] ? COURSES[track].file : '';
   }
   function urlWithTrack(track) {
     var u = new URL(location.href);
@@ -280,7 +458,7 @@
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         userId: session.user.id,
         profileId: profile.id,
-        profile: { id: profile.id, display_name: profile.display_name, track: profile.track },
+        profile: publicProfile(profile),
         data: cloudData,
         base: cloudBase
       }));
@@ -293,6 +471,7 @@
     if (typeof data.error_description === 'string') return data.error_description;
     if (typeof data.message === 'string') return data.message;
     if (typeof data.error === 'string') return data.error;
+    if (typeof data.code === 'string' && data.hint) return data.message || data.code;
     return '';
   }
   function friendly(err) {
@@ -453,9 +632,32 @@
     return Promise.resolve(session);
   }
 
+  function columnMissing(err) {
+    var m = (err && err.message) ? String(err.message) : '';
+    var low = m.toLowerCase();
+    if (low.indexOf('courses') < 0) return false;
+    return low.indexOf('does not exist') >= 0 || low.indexOf('schema cache') >= 0 || low.indexOf('could not find') >= 0 || low.indexOf('42703') >= 0 || low.indexOf('pgrst204') >= 0;
+  }
+  function normalizeProfile(row) {
+    var track = storedTrack(row && row.track);
+    var courses = listIds(row && row.courses);
+    if (track && courses.indexOf(track) < 0) courses.unshift(track);
+    if (!track && courses.length) track = courses[0];
+    return {
+      id: row.id,
+      display_name: row.display_name,
+      track: track,
+      courses: courses,
+      created_at: row.created_at || ''
+    };
+  }
   function loadProfiles() {
-    return api('/rest/v1/profiles?select=id,display_name,track,created_at&order=created_at.asc').then(function (rows) {
-      profiles = Array.isArray(rows) ? rows : [];
+    var cols = coursesColumn
+      ? 'id,display_name,track,courses,created_at'
+      : 'id,display_name,track,created_at';
+    return api('/rest/v1/profiles?select=' + cols + '&order=created_at.asc').then(function (rows) {
+      profiles = [];
+      (Array.isArray(rows) ? rows : []).forEach(function (row) { profiles.push(normalizeProfile(row)); });
       var pid = '';
       var i;
       try { pid = localStorage.getItem(PROFILE_KEY) || ''; } catch (e) {}
@@ -466,15 +668,25 @@
         try { localStorage.setItem(PROFILE_KEY, profile.id); } catch (e2) {}
       }
       return profiles;
+    }, function (err) {
+      if (coursesColumn && columnMissing(err)) {
+        coursesColumn = false;
+        return loadProfiles();
+      }
+      throw err;
     });
   }
   // 页面拿着 done / missions / position 的对象引用。同步时只改里面的键，不换对象。
   function installData(next) {
-    var prev = currentTrack ? JSON.stringify(cloudData.tracks[currentTrack]) : '';
-    var id, dst, src;
+    var prev = currentTrack && cloudData.tracks[currentTrack] ? JSON.stringify(cloudData.tracks[currentTrack]) : '';
+    var id, dst, src, seen = {};
     next = normalizeData(next);
-    for (id in TRACKS) {
-      if (!Object.prototype.hasOwnProperty.call(TRACKS, id)) continue;
+    cloudData.selected = next.selected.slice();
+    cloudData.selectedAt = next.selectedAt || 0;
+    for (id in next.tracks) {
+      if (!Object.prototype.hasOwnProperty.call(next.tracks, id)) continue;
+      seen[id] = 1;
+      if (!cloudData.tracks[id]) cloudData.tracks[id] = emptyTrack();
       dst = cloudData.tracks[id];
       src = next.tracks[id];
       copyInto(dst.done, src.done);
@@ -485,11 +697,19 @@
       dst.theme = src.theme;
       dst.themeAt = src.themeAt;
     }
+    for (id in cloudData.tracks) {
+      if (Object.prototype.hasOwnProperty.call(cloudData.tracks, id) && !seen[id]) delete cloudData.tracks[id];
+    }
     cloudBase = clone(cloudData);
     writeCache();
-    if (currentTrack && prev !== JSON.stringify(cloudData.tracks[currentTrack]) && view && typeof view.onChange === 'function') {
+    if (mode === 'cloud' && profile) cloudProfileId = profile.id;
+    if (currentTrack && cloudData.tracks[currentTrack] && prev !== JSON.stringify(cloudData.tracks[currentTrack]) && view && typeof view.onChange === 'function') {
       view.onChange(cloudData.tracks[currentTrack]);
     }
+  }
+  function adoptCloud(data, base) {
+    installData(data);
+    if (base) cloudBase = clone(normalizeData(base));
   }
   function loadProgress() {
     if (!profile) return Promise.resolve();
@@ -505,19 +725,26 @@
       } else {
         installData(remote);
       }
+      reconcileSelection();
     }, function (err) {
       if (cacheOk) adoptCloud(cache.data, cache.base || cache.data);
       else throw err;
+      reconcileSelection();
     });
   }
   function schedulePush() {
     writeCache();
     if (mode !== 'cloud' || !profile || !session) return;
+    if (cloudProfileId && profile.id !== cloudProfileId) return;
     clearTimeout(pushTimer);
-    pushTimer = setTimeout(pushNow, 700);
+    var pid = profile.id;
+    pushTimer = setTimeout(function () { pushNow(pid); }, 700);
   }
-  function pushNow() {
+  function pushNow(pid) {
+    clearTimeout(pushTimer);
     if (mode !== 'cloud' || !profile || !session) return Promise.resolve();
+    if (pid && pid !== profile.id) return Promise.resolve();
+    if (cloudProfileId && profile.id !== cloudProfileId) return Promise.resolve();
     return api('/rest/v1/progress?on_conflict=profile_id', {
       method: 'POST',
       headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -527,13 +754,17 @@
       writeCache();
     }, function () {
       clearTimeout(pushTimer);
-      pushTimer = setTimeout(pushNow, 8000);
+      var again = profile.id;
+      pushTimer = setTimeout(function () { pushNow(again); }, 8000);
     });
   }
   function pull() {
     if (pulling || mode !== 'cloud' || !profile) return;
+    if (cloudProfileId && profile.id !== cloudProfileId) return;
     pulling = true;
-    api('/rest/v1/progress?profile_id=eq.' + encodeURIComponent(profile.id) + '&select=data,updated_at').then(function (rows) {
+    var pid = profile.id;
+    api('/rest/v1/progress?profile_id=eq.' + encodeURIComponent(pid) + '&select=data,updated_at').then(function (rows) {
+      if (profile.id !== pid) return;
       var row = Array.isArray(rows) ? rows[0] : null;
       var remote = normalizeData(row && row.data);
       var merged = mergeData(cloudBase, cloudData, remote);
@@ -554,33 +785,73 @@
       });
     }
   }
+  function reconcileSelection() {
+    var cur = [];
+    var pending = null;
+    function add(id) {
+      if (courseIdOk(id) && cur.indexOf(id) < 0) cur.push(id);
+    }
+    try { pending = readJson(PENDING_KEY); } catch (e) {}
+    if (pending && profile && pending.profileId === profile.id) {
+      listIds(pending.courses).forEach(add);
+      try { localStorage.removeItem(PENDING_KEY); } catch (e2) {}
+    }
+    (profile && profile.courses || []).forEach(add);
+    (cloudData.selected || []).forEach(add);
+    if (currentTrack && COURSES[currentTrack]) add(currentTrack);
+    if (!profile || mode !== 'cloud') {
+      cloudData.selected = cur.slice();
+      return;
+    }
+    var cloudSame = sameSet(cur, cloudData.selected);
+    var profileSame = sameSet(cur, profile.courses);
+    if (cloudSame && profileSame) return;
+    if (!cloudSame) {
+      cloudData.selected = cur.slice();
+      cloudData.selectedAt = Date.now();
+      schedulePush();
+    }
+    profile.courses = cur.slice();
+    if (view && view.profile && view.profile.id === profile.id) view.profile.courses = cur.slice();
+    view.courses = cur.slice();
+    writeCache();
+    if (!profileSame && coursesColumn) {
+      patchProfile({ track: profile.track, courses: cur.slice() }).then(function () {}, function (err) {
+        if (columnMissing(err)) coursesColumn = false;
+      });
+    }
+  }
 
   function fillFromGuest(track) {
     var data = emptyData();
-    data.tracks[track] = readGuest(track);
+    if (COURSES[track]) data.tracks[track] = readGuest(track);
     installData(data);
   }
   function viewOf(track, needsProfile, suggested) {
     var tr = track && cloudData.tracks[track] ? cloudData.tracks[track] : emptyTrack();
+    var course = COURSES[track] || null;
+    if (track && !cloudData.tracks[track]) cloudData.tracks[track] = tr;
     view.track = track || '';
-    view.file = track ? TRACKS[track].file : '';
+    view.file = course ? course.file : '';
     view.mode = mode;
     view.needsProfile = !!needsProfile;
     view.configured = !!config;
     view.suggestedTrack = suggested || '';
     view.user = session ? { id: session.user.id, email: session.user.email } : null;
-    view.profile = profile ? { id: profile.id, display_name: profile.display_name, track: profile.track } : null;
-    view.profiles = profiles.map(function (p) {
-      return { id: p.id, display_name: p.display_name, track: p.track };
-    });
+    view.profile = profile ? publicProfile(profile) : null;
+    view.profiles = profiles.map(publicProfile);
+    view.courses = profile ? (profile.courses || []).slice() : (track ? [track] : []);
+    view.catalog = courseList();
     view.keys = track ? storageKeys(track) : null;
     view.done = tr.done;
     view.missions = tr.missions;
     view.position = tr.position;
     view.theme = tr.theme;
     view.autoplay = tr.autoplay;
-    view.label = track ? TRACKS[track].label : '';
-    view.pageTitle = track ? TRACKS[track].pageTitle : 'BiliPicks';
+    view.label = course ? course.title : '';
+    view.pageTitle = course ? course.pageTitle : 'BiliPicks';
+    view.ages = course ? course.ages : '';
+    view.blurb = course ? course.blurb : '';
     return view;
   }
 
@@ -602,19 +873,69 @@
     if (mode === 'guest') writeGuest(currentTrack);
     else schedulePush();
   }
-  function setTrack(track) {
-    if (!TRACKS[track]) return;
+  function patchProfile(body) {
+    return api('/rest/v1/profiles?id=eq.' + encodeURIComponent(profile.id), {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: body
+    });
+  }
+  function saveSelection(track, courseList, andGo) {
+    var selected, body, sameProfile;
+    if (!COURSES[track]) return Promise.resolve({ ok: false, error: '没有这门课。' });
+    selected = listIds(courseList);
+    if (selected.indexOf(track) < 0) selected.unshift(track);
     rememberTrack(track);
-    var next = urlWithTrack(track);
-    var job = Promise.resolve();
-    if (mode === 'cloud' && profile && profile.track !== track) {
-      job = api('/rest/v1/profiles?id=eq.' + encodeURIComponent(profile.id), {
-        method: 'PATCH',
-        headers: { Prefer: 'return=minimal' },
-        body: { track: track }
-      }).then(function () { profile.track = track; }, function () {});
+    if (mode !== 'cloud' || !profile || !session) {
+      if (andGo) location.href = urlWithTrack(track);
+      return Promise.resolve({ ok: true, track: track });
     }
-    job.then(function () { location.href = next; }, function () { location.href = next; });
+    sameProfile = cloudProfileId === profile.id;
+    body = { track: track };
+    if (coursesColumn) body.courses = selected.slice();
+    function afterPatch() {
+      profile.track = track;
+      profile.courses = selected.slice();
+      if (view.profile && view.profile.id === profile.id) {
+        view.profile.track = track;
+        view.profile.courses = selected.slice();
+      }
+      view.courses = selected.slice();
+      if (sameProfile) {
+        cloudData.selected = selected.slice();
+        cloudData.selectedAt = Date.now();
+        writeCache();
+        return pushNow(profile.id);
+      }
+      // 新建或刚换的档案还没装进这份进度。不要把上一个孩子的缓存写到新 id 上。
+      try { localStorage.removeItem(CACHE_KEY); } catch (e0) {}
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ profileId: profile.id, courses: selected })); } catch (e) {}
+      return null;
+    }
+    return patchProfile(body).then(afterPatch, function (err) {
+      if (!(coursesColumn && columnMissing(err))) throw err;
+      coursesColumn = false;
+      return patchProfile({ track: track }).then(afterPatch);
+    }).then(function () {
+      if (andGo) location.href = urlWithTrack(track);
+      return { ok: true, track: track };
+    }, function (err) {
+      return { ok: false, error: friendly(err) };
+    });
+  }
+  function setTrack(track) {
+    var selected = [];
+    if (profile && profile.courses) selected = selected.concat(profile.courses);
+    if (cloudData && cloudData.selected) selected = selected.concat(cloudData.selected);
+    return saveSelection(track, selected, true);
+  }
+  function setCourses(list) {
+    var selected = listIds(list);
+    var track;
+    if (!selected.length) return Promise.resolve({ ok: false, error: '至少留一门课。' });
+    track = currentTrack && selected.indexOf(currentTrack) >= 0 ? currentTrack : selected[0];
+    if (!COURSES[track]) return Promise.resolve({ ok: false, error: '没有这门课。' });
+    return saveSelection(track, selected, track !== currentTrack);
   }
   function signUp(email, password) {
     var bad = checkEmailPassword(email, password);
@@ -652,12 +973,12 @@
     return loadProfiles().then(function () {
       view.mode = 'cloud';
       view.configured = true;
+      view.catalog = courseList();
       view.user = session ? { id: session.user.id, email: session.user.email } : null;
-      view.profile = profile ? { id: profile.id, display_name: profile.display_name, track: profile.track } : null;
-      view.profiles = profiles.map(function (p) {
-        return { id: p.id, display_name: p.display_name, track: p.track };
-      });
+      view.profile = profile ? publicProfile(profile) : null;
+      view.profiles = profiles.map(publicProfile);
       view.needsProfile = !profile;
+      view.courses = profile ? profile.courses.slice() : [];
       return { ok: true, needsProfile: !profile, profile: view.profile };
     });
   }
@@ -665,6 +986,7 @@
     var job = session && config
       ? api('/auth/v1/logout', { method: 'POST', body: {} }).catch(function () {})
       : Promise.resolve();
+    clearTimeout(pushTimer);
     return job.then(function () {
       clearAuth();
       try { localStorage.removeItem(PROFILE_KEY); } catch (e) {}
@@ -672,25 +994,43 @@
       location.reload();
     });
   }
-  function createProfile(name, track) {
+  function createProfile(name, track, courseList) {
     var shown = String(name || '').replace(/\s+/g, ' ').trim();
     var bad = checkName(shown);
+    var selected, body;
     if (bad) return Promise.resolve({ ok: false, error: bad });
-    if (!TRACKS[track]) track = suggestedOr('jh');
+    selected = listIds(courseList);
+    if (!COURSES[track]) track = selected.length && COURSES[selected[0]] ? selected[0] : suggestedOr('jh');
+    if (selected.indexOf(track) < 0) selected.unshift(track);
     if (!session) return Promise.resolve({ ok: false, error: '请先登录。' });
+    clearTimeout(pushTimer);
+    body = { user_id: session.user.id, display_name: shown, track: track };
+    if (coursesColumn) body.courses = selected.slice();
     return api('/rest/v1/profiles', {
       method: 'POST',
       headers: { Prefer: 'return=representation' },
-      body: { user_id: session.user.id, display_name: shown, track: track }
+      body: body
     }).then(function (rows) {
       var row = Array.isArray(rows) ? rows[0] : null;
       if (!row) return { ok: false, error: '没有建成档案，请稍后再试。' };
-      profile = row;
-      profiles.push(row);
+      if (!row.courses) row.courses = selected.slice();
+      profile = normalizeProfile(row);
+      if (!profile.courses.length) profile.courses = selected.slice();
+      profiles.push(profile);
       mode = 'cloud';
-      try { localStorage.setItem(PROFILE_KEY, row.id); } catch (e) {}
-      return { ok: true, profile: row };
+      view.needsProfile = false;
+      view.mode = 'cloud';
+      view.profile = publicProfile(profile);
+      view.profiles = profiles.map(publicProfile);
+      view.courses = profile.courses.slice();
+      try { localStorage.setItem(PROFILE_KEY, profile.id); } catch (e) {}
+      try { localStorage.setItem(PENDING_KEY, JSON.stringify({ profileId: profile.id, courses: profile.courses })); } catch (e2) {}
+      return { ok: true, profile: view.profile };
     }, function (err) {
+      if (coursesColumn && columnMissing(err)) {
+        coursesColumn = false;
+        return createProfile(shown, track, selected);
+      }
       return { ok: false, error: friendly(err) };
     });
   }
@@ -698,16 +1038,23 @@
     return view.suggestedTrack || currentTrack || rememberedTrack() || fallback;
   }
   function selectProfile(id) {
-    var i, next = null;
+    var i, next = null, track = '';
     for (i = 0; i < profiles.length; i++) if (profiles[i].id === id) next = profiles[i];
     if (!next) return;
+    clearTimeout(pushTimer);
     profile = next;
+    cloudProfileId = '';
     try { localStorage.setItem(PROFILE_KEY, next.id); } catch (e) {}
-    var track = TRACKS[next.track] ? next.track : 'jh';
+    if (COURSES[next.track]) track = next.track;
+    if (!track && next.courses) {
+      for (i = 0; i < next.courses.length; i++) if (COURSES[next.courses[i]]) { track = next.courses[i]; break; }
+    }
+    if (!track) track = rememberedTrack() || 'jh';
     rememberTrack(track);
     location.href = urlWithTrack(track);
   }
   function deleteProfile(id) {
+    clearTimeout(pushTimer);
     return api('/rest/v1/profiles?id=eq.' + encodeURIComponent(id), {
       method: 'DELETE',
       headers: { Prefer: 'return=minimal' }
@@ -720,25 +1067,49 @@
     });
   }
   function mergePlan() {
+    var courses = [];
+    var plan;
     if (mode !== 'cloud' || !profile || !session) return null;
-    var fp = guestFingerprint();
-    if (!fp || fp === '|||||') return null;
-    if (fp === readMergeMark()) return null;
-    var g1 = countTrack(readGuest('g1'));
-    var jh = countTrack(readGuest('jh'));
-    if (!g1 && !jh) return null;
-    return {
-      g1: g1,
-      jh: jh,
-      profileId: profile.id,
-      profiles: view.profiles.slice()
-    };
+    if (!guestHasProgress()) return null;
+    if (guestFingerprint() === readMergeMark()) return null;
+    plan = { courses: courses, profileId: profile.id, profiles: view.profiles.slice(), g1: 0, jh: 0 };
+    courseIds().forEach(function (id) {
+      var n = countTrack(readGuest(id));
+      plan[id] = n;
+      if (n) courses.push({ id: id, title: COURSES[id].title, count: n });
+    });
+    if (!courses.length) return null;
+    return plan;
+  }
+  function attachCourse(pid, trackId, remote) {
+    var list = listIds(remote.selected);
+    var row = null;
+    var i, courses, body;
+    if (list.indexOf(trackId) < 0) list.push(trackId);
+    remote.selected = list;
+    remote.selectedAt = Date.now();
+    for (i = 0; i < profiles.length; i++) if (profiles[i].id === pid) row = profiles[i];
+    if (!coursesColumn) return Promise.resolve();
+    courses = listIds(row && row.courses);
+    if (courses.indexOf(trackId) < 0) courses.push(trackId);
+    if (row && sameSet(courses, row.courses)) return Promise.resolve();
+    body = { courses: courses };
+    if (row && row.track) body.track = row.track;
+    return api('/rest/v1/profiles?id=eq.' + encodeURIComponent(pid), {
+      method: 'PATCH',
+      headers: { Prefer: 'return=minimal' },
+      body: body
+    }).then(function () {
+      if (row) row.courses = courses;
+    }, function (err) {
+      if (columnMissing(err)) coursesColumn = false;
+    });
   }
   function mergeGuest(choices) {
     choices = choices || {};
     var byProfile = {};
     clearTimeout(pushTimer);
-    ['g1', 'jh'].forEach(function (track) {
+    courseIds().forEach(function (track) {
       var pid = choices[track];
       var guest;
       if (!pid) return;
@@ -754,17 +1125,23 @@
           var row = Array.isArray(rows) ? rows[0] : null;
           var remote = normalizeData(row && row.data);
           var trackId;
+          var sub = Promise.resolve();
           if (profile && pid === profile.id) remote = mergeData(cloudBase, cloudData, remote);
           for (trackId in byProfile[pid]) {
             if (!Object.prototype.hasOwnProperty.call(byProfile[pid], trackId)) continue;
             remote.tracks[trackId] = mergeTrackState({}, remote.tracks[trackId], byProfile[pid][trackId]);
           }
-          return api('/rest/v1/progress?on_conflict=profile_id', {
-            method: 'POST',
-            headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
-            body: { profile_id: pid, user_id: session.user.id, data: remote }
-          }).then(function () {
-            if (profile && pid === profile.id) installData(remote);
+          Object.keys(byProfile[pid]).forEach(function (id) {
+            sub = sub.then(function () { return attachCourse(pid, id, remote); });
+          });
+          return sub.then(function () {
+            return api('/rest/v1/progress?on_conflict=profile_id', {
+              method: 'POST',
+              headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+              body: { profile_id: pid, user_id: session.user.id, data: remote }
+            }).then(function () {
+              if (profile && pid === profile.id) installData(remote);
+            });
           });
         });
       });
@@ -785,6 +1162,7 @@
     onChange: null,
     save: save,
     setTrack: setTrack,
+    setCourses: setCourses,
     signUp: signUp,
     signIn: signIn,
     signOut: signOut,
@@ -795,12 +1173,16 @@
     mergeGuest: mergeGuest,
     dismissMerge: dismissMerge,
     mergeTrackState: mergeTrackState,
-    TRACKS: TRACKS
+    catalog: courseList(),
+    courses: [],
+    TRACKS: COURSES,
+    COURSES: COURSES
   };
 
   function boot() {
     var urlTrack = trackFromUrl();
     var remembered = rememberedTrack();
+    migrateGuestStorage();
     if (!config) {
       mode = 'guest';
       currentTrack = urlTrack || remembered;
@@ -822,16 +1204,27 @@
           currentTrack = '';
           return viewOf('', true, urlTrack || remembered);
         }
-        var track = urlTrack || (TRACKS[profile.track] ? profile.track : '') || remembered || 'jh';
+        var stored = storedTrack(profile.track);
+        var track = urlTrack || (COURSES[stored] ? stored : '') || remembered || 'jh';
+        var patch = Promise.resolve();
+        if (!COURSES[track]) track = 'jh';
         currentTrack = track;
         rememberTrack(track);
-        var patch = (urlTrack && profile.track !== urlTrack)
-          ? api('/rest/v1/profiles?id=eq.' + encodeURIComponent(profile.id), {
-              method: 'PATCH',
-              headers: { Prefer: 'return=minimal' },
-              body: { track: urlTrack }
-            }).then(function () { profile.track = urlTrack; }, function () {})
-          : Promise.resolve();
+        if (urlTrack && stored !== urlTrack) {
+          var courses = listIds(profile.courses);
+          var body;
+          if (courses.indexOf(urlTrack) < 0) courses.push(urlTrack);
+          profile.courses = courses;
+          body = { track: urlTrack };
+          if (coursesColumn) body.courses = courses.slice();
+          patch = patchProfile(body).then(function () {
+            profile.track = urlTrack;
+          }, function (err) {
+            if (!(coursesColumn && columnMissing(err))) return;
+            coursesColumn = false;
+            return patchProfile({ track: urlTrack }).then(function () { profile.track = urlTrack; }, function () {});
+          });
+        }
         return patch.then(function () { return loadProgress(); }).then(function () {
           startPoll();
           return viewOf(track, false, track);
@@ -857,6 +1250,10 @@
     urlWithTrack: urlWithTrack,
     open: open,
     mergeTrackState: mergeTrackState,
-    TRACKS: TRACKS
+    mergeData: mergeData,
+    courseList: courseList,
+    migrateGuestStorage: migrateGuestStorage,
+    COURSES: COURSES,
+    TRACKS: COURSES
   };
 })(typeof window !== 'undefined' ? window : this);

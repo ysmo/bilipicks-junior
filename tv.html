@@ -78,14 +78,17 @@ h1,h2,h3,p{margin:0}
 .pitem{display:block;padding:1rem 1.2rem;background:#1f2c45}
 .pitem b{display:block;font-size:1.15rem}
 .pitem small{display:block;margin-top:.3rem;color:#a9b7cc;font-size:.88rem;line-height:1.5}
+.tv-kid{margin-top:.55rem;background:#24324c}
+.tv-kid.on-kid{box-shadow:inset .28rem 0 0 #7ec8ff}
 .pitem .reddot{box-shadow:0 0 0 .18rem #1f2c45}
 .pnote{margin-top:1.1rem;color:#7f90a8;font-size:.85rem;line-height:1.6}
 .phint{margin-top:.8rem;color:#c3cede;font-size:.9rem}
 .tv-input{display:block;width:100%;margin:0 0 .7rem;padding:.75rem .9rem;border:0;border-radius:.6rem;background:#0e1626;color:#fff;font:inherit}
 .pick{position:fixed;top:0;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#0b1220}
-.pick h1{font-size:2rem;font-weight:800;margin-bottom:1.2rem;text-align:center}
-.pick-row{width:64rem}
-.pick-row .tile{height:12rem}
+.pick h1{font-size:2rem;font-weight:800;margin-bottom:.6rem;text-align:center}
+.pick-lead{text-align:center;color:#93a3bb;font-size:1rem;margin:0 0 1.2rem}
+.pick-row{width:70rem;display:flex;flex-wrap:wrap;justify-content:center}
+.pick-row .tile{width:20rem;height:12rem;margin:.7rem}
 
 /* 一排一排的视频方块 */
 .row{position:relative;height:14.4rem;margin:-.7rem -3.5rem 0;overflow:hidden} /* 伸到屏幕两边再裁：右边露半块提示还有，焦点放大也不被切 */
@@ -145,11 +148,9 @@ h1,h2,h3,p{margin:0}
 <div class="msg" id="msg"><b>BiliPicks</b>正在加载…</div>
 <section class="pick" id="pick" hidden>
   <div>
-    <h1>选一条路线</h1>
-    <div class="metro pick-row" id="pick-metro">
-      <div class="tile stage f" data-track="g1" style="--h:#2fa866;--h2:#1d7446"><span class="no">小学</span><div class="ic">📖</div><div class="nm">从好奇到会看</div></div>
-      <div class="tile stage" data-track="jh" style="--h:#2f86e0;--h2:#1d5ea8"><span class="no">初中</span><div class="ic">🧠</div><div class="nm">从好奇到机器学习</div></div>
-    </div>
+    <h1>选一门课</h1>
+    <p class="pick-lead">换一门不会清掉其他课的进度</p>
+    <div class="pick-row" id="pick-metro"></div>
   </div>
 </section>
 
@@ -176,8 +177,9 @@ h1,h2,h3,p{margin:0}
   <div class="panel-box">
     <h2>设置</h2>
     <div class="tile pitem f"><b id="p-upd-t">应用更新</b><small id="p-upd-s"></small><i class="reddot" id="p-upd-dot" hidden></i></div>
-    <div class="tile pitem" id="p-track" style="margin-top:.7rem"><b id="p-track-t">路线</b><small id="p-track-s">按 OK 换成另一条，另一边的进度还在</small></div>
-    <div class="tile pitem" id="p-acc" style="margin-top:.7rem"><b id="p-acc-t">家长账号</b><small id="p-acc-s">未登录。按 OK 在下面输入邮箱</small></div>
+    <div class="tile pitem" id="p-track" style="margin-top:.7rem"><b id="p-track-t">换一门课</b><small id="p-track-s">按 OK 换一门，其他课的进度还在</small></div>
+    <div class="tile pitem" id="p-acc" style="margin-top:.7rem"><b id="p-acc-t">孩子档案</b><small id="p-acc-s">未登录。按 OK 在下面输入邮箱</small></div>
+    <div id="tv-kids"></div>
     <div id="tv-auth" hidden>
       <input class="tv-input" id="tv-email" type="email" autocomplete="username" placeholder="家长或监护人邮箱">
       <input class="tv-input" id="tv-pass" type="password" autocomplete="current-password" placeholder="密码，至少 6 位">
@@ -200,7 +202,7 @@ var store = {
   get: function (k, fb) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } },
   set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
 };
-// 和网页版共用：看完标记。具体键名等账号模块决定（小学 g1，初中 jh）。
+// 和网页版共用：看完标记。键名按课程来（从好奇到会看 g1，初中生学 AI jh）。
 var DONE_KEY = 'bilipicks-jh-done-v1';
 var done = {};
 var position = {};
@@ -768,8 +770,27 @@ function focusVideo(v) {
 // 返回 'exit' 让应用退出，返回 'space' 让应用往播放器里按一下空格（暂停/继续），
 // 返回 'seek+' / 'seek-' 让应用往播放器里按一下 → / ←（快进 / 快退）。
 var picking = false;
-function showPick() {
+var pickFromSettings = false;
+function paintPick() {
+  var list = (window.BiliPicksAccount && window.BiliPicksAccount.courseList()) || [];
+  var current = window.BP && window.BP.track;
+  var html = '';
+  var focused = false;
+  list.forEach(function (c) {
+    var on = c.id === current;
+    if (on) focused = true;
+    html += '<div class="tile stage' + (on ? ' f' : '') + '" data-track="' + c.id + '" style="--h:' + c.color + ';--h2:' + c.color2 + '"><span class="no">' + esc(c.ages) + '</span><div class="ic">' + c.icon + '</div><div class="nm">' + esc(c.title) + '</div></div>';
+  });
+  $('#pick-metro').innerHTML = html;
+  if (!focused) {
+    var first = $('#pick-metro .tile');
+    if (first) first.classList.add('f');
+  }
+}
+function showPick(fromSettings) {
   picking = true;
+  pickFromSettings = !!fromSettings;
+  paintPick();
   $('#msg').hidden = true;
   $('#pick').hidden = false;
 }
@@ -785,7 +806,15 @@ function pickKey(k) {
     return;
   }
   if (k === 'ok' && window.BP) window.BP.setTrack(tiles[i].getAttribute('data-track'));
-  if (k === 'back') return 'exit';
+  if (k === 'back') {
+    if (pickFromSettings) {
+      picking = false;
+      pickFromSettings = false;
+      $('#pick').hidden = true;
+      return;
+    }
+    return 'exit';
+  }
 }
 window.tvKey = function (k) {
   if (picking) return pickKey(k) || '';
@@ -848,16 +877,66 @@ function paintIdle() {
   }
   var bp = window.BP || {};
   var who = bp.mode === 'cloud' && bp.profile ? ('当前孩子：' + bp.profile.display_name) : '还没登录，进度在这台设备上';
-  var route = bp.track === 'g1' ? '小学' : (bp.track === 'jh' ? '初中' : '');
-  $('#p-note').textContent = [route, who, '视频清单在网站上更新，不用重装应用', 'BiliPicks 不是 B 站官方产品'].filter(Boolean).join(' · ');
+  var course = '';
+  var list = bp.catalog || (window.BiliPicksAccount && window.BiliPicksAccount.courseList()) || [];
+  var ci;
+  for (ci = 0; ci < list.length; ci++) if (list[ci].id === bp.track) course = list[ci].title;
+  paintKids(bp);
+  $('#p-note').textContent = [course, who, '视频清单在网站上更新，不用重装应用', 'BiliPicks 不是 B 站官方产品'].filter(Boolean).join(' · ');
   var acc = $('#p-acc-s');
+  var accT = $('#p-acc-t');
+  if (accT) accT.textContent = bp.mode === 'cloud' ? '孩子档案' : '家长账号';
   if (acc) {
-    if (bp.mode === 'cloud' && bp.profile) acc.textContent = bp.profiles.length > 1 ? '按 OK 换成下一个孩子' : '已登录 ' + (bp.user && bp.user.email ? bp.user.email : '');
-    else if (!bp.configured) acc.textContent = '云端登录还没配置（公开站用 config.public.js，本机 config.js 可覆盖），现在是访客';
+    if (bp.mode === 'cloud' && bp.profile) {
+      var mine = profileCourseText(bp, bp.profile);
+      acc.textContent = '当前是「' + bp.profile.display_name + '」' + (mine ? ' · ' + mine : '') + '。按 OK 换人或退出';
+    } else if (!bp.configured) acc.textContent = '云端登录还没配置（公开站用 config.public.js，本机 config.js 可覆盖），现在是访客';
     else acc.textContent = '按 OK 填写家长邮箱';
   }
   var tr = $('#p-track-s');
-  if (tr) tr.textContent = bp.track === 'g1' ? '现在是小学。按 OK 换成初中' : '现在是初中。按 OK 换成小学';
+  if (tr) tr.textContent = course ? ('现在是「' + course + '」。按 OK 换一门，其他课的进度还在') : '按 OK 选一门课';
+  var tt = $('#p-track-t');
+  if (tt) tt.textContent = '换一门课';
+}
+function profileCourseText(bp, p) {
+  var ids = (p.courses && p.courses.length) ? p.courses : (p.track ? [p.track] : []);
+  var names = [];
+  var catalog = (bp && bp.catalog) || (window.BiliPicksAccount && window.BiliPicksAccount.courseList()) || [];
+  var i, j, title;
+  for (i = 0; i < ids.length; i++) {
+    title = '';
+    for (j = 0; j < catalog.length; j++) if (catalog[j].id === ids[i]) title = catalog[j].title;
+    if (title) names.push(title);
+  }
+  return names.join('、');
+}
+function paintKids(bp) {
+  var box = $('#tv-kids');
+  if (!box) return;
+  var html = '';
+  var i, p, current, courses;
+  if (bp && bp.mode === 'cloud' && bp.profiles && bp.profiles.length) {
+    for (i = 0; i < bp.profiles.length; i++) {
+      p = bp.profiles[i];
+      current = bp.profile && bp.profile.id === p.id;
+      courses = profileCourseText(bp, p);
+      html += '<div class="tile pitem tv-kid' + (current ? ' on-kid' : '') + '" hidden data-profile="' + esc(p.id) + '"><b>' + esc(p.display_name) + (current ? ' · 当前' : '') + '</b><small>' + esc(courses || '还没选课') + '</small></div>';
+    }
+    html += '<div class="tile pitem" id="p-signout" hidden><b>退出登录</b><small>' + esc((bp.user && bp.user.email) || '') + '</small></div>';
+  }
+  box.innerHTML = html;
+}
+function kidsOpen() {
+  var row = $('#tv-kids .pitem');
+  return !!(row && !row.hidden);
+}
+function setKids(open) {
+  var rows = [].slice.call($('#tv-kids').querySelectorAll('.pitem'));
+  rows.forEach(function (el) { el.hidden = !open; });
+  if (open && rows.length) {
+    [].slice.call($('#panel').querySelectorAll('.pitem')).forEach(function (el) { el.classList.remove('f'); });
+    rows[0].classList.add('f');
+  }
 }
 function checkUpd() {
   fetch('tv-app.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.json(); }).then(function (m) {
@@ -890,18 +969,24 @@ function panelKey(k) {
   var cur = $('#panel .pitem.f') || panelItems()[0];
   if (!cur) return;
   if (cur.id === 'p-track' && k === 'ok' && window.BP) {
-    window.BP.setTrack(window.BP.track === 'g1' ? 'jh' : 'g1');
+    closePanel();
+    showPick(true);
+    return;
+  }
+  if (cur.getAttribute && cur.getAttribute('data-profile') && k === 'ok' && window.BP) {
+    window.BP.selectProfile(cur.getAttribute('data-profile'));
+    return;
+  }
+  if (cur.id === 'p-signout' && k === 'ok' && window.BP) {
+    window.BP.signOut();
     return;
   }
   if (cur.id === 'p-acc' && k === 'ok' && window.BP) {
-    if (window.BP.mode === 'cloud' && window.BP.profiles && window.BP.profiles.length > 1) {
-      var ids = window.BP.profiles.map(function (p) { return p.id; });
-      var at = ids.indexOf(window.BP.profile && window.BP.profile.id);
-      window.BP.selectProfile(ids[(at + 1) % ids.length]);
+    if (window.BP.mode === 'cloud' && window.BP.profiles && window.BP.profiles.length) {
+      setKids(!kidsOpen());
       return;
     }
     if (!window.BP.configured) { toast(window.BP.offline ? '刚才没连上云端' : '云端登录还没配置。公开站用 config.public.js，本机 config.js 可覆盖'); return; }
-    if (window.BP.mode === 'cloud') { window.BP.signOut(); return; }
     var box = $('#tv-auth');
     var login = $('#p-login');
     box.hidden = false;
@@ -967,7 +1052,8 @@ function startTv(dataPromise) {
     return loadHls().catch(function () {}).then(function () { return data; });
   }).then(function (data) {
     prepare(data);
-    $('#sub').textContent = (D.path && D.path.title ? D.path.title + ' · ' : '') + '电视版';
+    var courseName = (window.BP && window.BP.label) || ((D.path && D.path.title) || '');
+    $('#sub').textContent = (courseName ? courseName + ' · ' : '') + '电视版';
     $('#msg').hidden = true;
     renderHome();
     checkUpd();

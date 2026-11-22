@@ -72,4 +72,57 @@ const pos = merge(
 );
 assert(pos.position.a.t === 20, 'later watch position wins');
 
+const mergeData = context.BiliPicksAccount.mergeData;
+const kept = mergeData(
+  {},
+  { tracks: { jh: { done: { b: 2 } } } },
+  { tracks: { g1: { done: { a: 9 } } } }
+);
+assert(kept.tracks.jh.done.b === 2, 'other course progress stays when this course syncs');
+assert(kept.tracks.g1.done.a === 9, 'incoming course progress stays');
+
+const extra = mergeData(
+  {},
+  { tracks: { extra: { done: { z: 4 } } } },
+  { tracks: { g1: { done: { a: 1 } } } }
+);
+assert(extra.tracks.extra.done.z === 4, 'unknown course id is kept');
+
+const sel = mergeData(
+  {},
+  { selected: ['g1', 'jh'], selectedAt: 10, tracks: { g1: { done: { a: 1 } } } },
+  { tracks: { g1: { done: { a: 1 } } } }
+);
+assert(sel.selected.indexOf('g1') >= 0 && sel.selected.indexOf('jh') >= 0, 'selected courses survive a progress sync');
+
+const newerSel = mergeData(
+  { selected: ['g1'], selectedAt: 1 },
+  { selected: ['g1'], selectedAt: 1 },
+  { selected: ['g1', 'jh'], selectedAt: 20 }
+);
+assert(newerSel.selected.length === 2, 'newer course list wins');
+
+const courses = context.BiliPicksAccount.COURSES;
+assert(courses.g1.prefix === 'bilipicks-g1' && courses.g1.legacyPrefix === 'bilipicks-g1', 'grade-1 guest keys stay put');
+assert(courses.jh.prefix === 'bilipicks-jh' && courses.jh.legacyPrefix === 'bilipicks-jh', 'junior guest keys stay put');
+assert(courses.g1.title === '从好奇到会看', 'elementary course title');
+assert(courses.jh.title === '初中生学 AI', 'junior course title');
+assert(code.indexOf("s.src = src") >= 0 && code.indexOf("loadScript('config.js'") >= 0 && code.indexOf("loadScript('config.public.js'") >= 0, 'loadConfig tries config.js then config.public.js');
+assert(code.indexOf('service_role') < 0, 'account.js has no service role key');
+
+context.localStorage = {
+  store: {},
+  getItem: function (k) { return Object.prototype.hasOwnProperty.call(this.store, k) ? this.store[k] : null; },
+  setItem: function (k, v) { this.store[k] = String(v); },
+  removeItem: function (k) { delete this.store[k]; }
+};
+courses.demo = { id: 'demo', title: 'demo', prefix: 'bilipicks-c-demo', legacyPrefix: 'bilipicks-old-demo', file: 'data-demo.js' };
+context.localStorage.setItem('bilipicks-old-demo-done-v1', '{"a":1}');
+context.localStorage.setItem('bilipicks-c-demo-missions-v1', '{"kept":1}');
+context.BiliPicksAccount.migrateGuestStorage();
+assert(context.localStorage.getItem('bilipicks-c-demo-done-v1') === '{"a":1}', 'legacy guest key is copied');
+assert(context.localStorage.getItem('bilipicks-old-demo-done-v1') === '{"a":1}', 'legacy guest key is not deleted');
+assert(context.localStorage.getItem('bilipicks-c-demo-missions-v1') === '{"kept":1}', 'existing new key is not overwritten');
+delete courses.demo;
+
 if (!process.exitCode) console.log('merge ok');
