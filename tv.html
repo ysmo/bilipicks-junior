@@ -81,6 +81,11 @@ h1,h2,h3,p{margin:0}
 .pitem .reddot{box-shadow:0 0 0 .18rem #1f2c45}
 .pnote{margin-top:1.1rem;color:#7f90a8;font-size:.85rem;line-height:1.6}
 .phint{margin-top:.8rem;color:#c3cede;font-size:.9rem}
+.tv-input{display:block;width:100%;margin:0 0 .7rem;padding:.75rem .9rem;border:0;border-radius:.6rem;background:#0e1626;color:#fff;font:inherit}
+.pick{position:fixed;top:0;left:0;right:0;bottom:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#0b1220}
+.pick h1{font-size:2rem;font-weight:800;margin-bottom:1.2rem;text-align:center}
+.pick-row{width:64rem}
+.pick-row .tile{height:12rem}
 
 /* 一排一排的视频方块 */
 .row{position:relative;height:14.4rem;margin:-.7rem -3.5rem 0;overflow:hidden} /* 伸到屏幕两边再裁：右边露半块提示还有，焦点放大也不被切 */
@@ -138,6 +143,15 @@ h1,h2,h3,p{margin:0}
 </header>
 <main class="home" id="home"></main>
 <div class="msg" id="msg"><b>BiliPicks</b>正在加载…</div>
+<section class="pick" id="pick" hidden>
+  <div>
+    <h1>选一条路线</h1>
+    <div class="metro pick-row" id="pick-metro">
+      <div class="tile stage f" data-track="g1" style="--h:#2fa866;--h2:#1d7446"><span class="no">小学</span><div class="ic">📖</div><div class="nm">从好奇到会看</div></div>
+      <div class="tile stage" data-track="jh" style="--h:#2f86e0;--h2:#1d5ea8"><span class="no">初中</span><div class="ic">🧠</div><div class="nm">从好奇到机器学习</div></div>
+    </div>
+  </div>
+</section>
 
 <section class="player quiet" id="player" hidden>
   <div class="ov top-ov">
@@ -162,13 +176,21 @@ h1,h2,h3,p{margin:0}
   <div class="panel-box">
     <h2>设置</h2>
     <div class="tile pitem f"><b id="p-upd-t">应用更新</b><small id="p-upd-s"></small><i class="reddot" id="p-upd-dot" hidden></i></div>
+    <div class="tile pitem" id="p-track" style="margin-top:.7rem"><b id="p-track-t">路线</b><small id="p-track-s">按 OK 换成另一条，另一边的进度还在</small></div>
+    <div class="tile pitem" id="p-acc" style="margin-top:.7rem"><b id="p-acc-t">家长账号</b><small id="p-acc-s">未登录。按 OK 在下面输入邮箱</small></div>
+    <div id="tv-auth" hidden>
+      <input class="tv-input" id="tv-email" type="email" autocomplete="username" placeholder="家长或监护人邮箱">
+      <input class="tv-input" id="tv-pass" type="password" autocomplete="current-password" placeholder="密码，至少 6 位">
+      <p class="pnote">不满 14 周岁由家长注册。不收集孩子的姓名、学校、电话或生日。</p>
+    </div>
+    <div class="tile pitem" id="p-login" tabindex="0" hidden style="margin-top:.7rem"><b id="p-login-t">登录</b><small>按 OK 登录。要注册，先按右再按 OK</small></div>
     <p class="pnote" id="p-note"></p>
-    <p class="phint">OK 确认 · 返回键关闭</p>
+    <p class="phint">OK 确认 · 上下移动 · 返回键关闭</p>
   </div>
 </section>
 <div class="toast" id="toast"></div>
 
-<script src="data.js"></script>
+<script src="account.js"></script>
 <script>
 'use strict';
 // ---------- 工具 ----------
@@ -178,11 +200,24 @@ var store = {
   get: function (k, fb) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fb : v; } catch (e) { return fb; } },
   set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
 };
-// 和网页版共用：看完标记
+// 和网页版共用：看完标记。具体键名等账号模块决定（小学 g1，初中 jh）。
 var DONE_KEY = 'bilipicks-jh-done-v1';
-var done = store.get(DONE_KEY, {}) || {};
+var done = {};
+var position = {};
 var isDone = function (id) { return !!done[id]; };
-function setDone(id, on) { if (on) done[id] = Date.now(); else delete done[id]; store.set(DONE_KEY, done); }
+function setDone(id, on) {
+  if (on) done[id] = Date.now(); else delete done[id];
+  if (window.BP && window.BP.save) window.BP.save({ done: done });
+  else store.set(DONE_KEY, done);
+}
+function rememberPos(id, seconds) {
+  if (!id || !(seconds > 1)) return;
+  var now = Date.now();
+  var prev = position[id];
+  if (prev && now - prev.at < 5000) return;
+  position[id] = { t: Math.floor(seconds), at: now };
+  if (window.BP && window.BP.save) window.BP.save({ position: position });
+}
 
 var HUES = ['#e9558a', '#f07c2a', '#d49a00', '#2fa866', '#0f9fa3', '#2f86e0', '#6b6ff0', '#a05bd8', '#cf4f9a'];
 var HUES2 = ['#a8326a', '#b84f12', '#9a6c00', '#1d7446', '#0a6e72', '#1d5ea8', '#4447b8', '#7036a3', '#93306c'];
@@ -297,6 +332,7 @@ function tick() {
 // 网站版数据内嵌在 index.html；开源版用 <script src="data.js"> 先加载好 DATA
 // （data.js 里是顶层 const，不挂在 window 上，所以用 typeof 判断）
 function loadData() {
+  if (window.DATA) return Promise.resolve(window.DATA);
   if (typeof DATA !== 'undefined') return Promise.resolve(DATA);
   return fetch('./', {cache: 'no-cache'}).then(function (r) { return r.text(); }).then(function (t) {
     var m = t.match(/^const DATA = (\{.*\});$/m);
@@ -536,6 +572,13 @@ function showVideo(delay) {
       video.tabIndex = -1;
       if (vv.cover) video.poster = coverUrl(vv);
       box.insertBefore(video, box.firstChild);
+      var saved = position[vv.id];
+      video.addEventListener('loadedmetadata', function () {
+        if (saved && saved.t > 5 && (!video.duration || saved.t < video.duration - 8)) {
+          try { video.currentTime = saved.t; } catch (e) {}
+        }
+      });
+      video.addEventListener('timeupdate', function () { rememberPos(vv.id, video.currentTime); });
       fetch(lanPlayUrl(vv)).then(function (r) { return r.json(); }).then(function (info) {
         if (!video.isConnected) return;
         if (info && info.error) { toast(info.error); return; }
@@ -724,7 +767,28 @@ function focusVideo(v) {
 // 安卓应用把遥控器按键转成 tvKey('left' | 'right' | 'up' | 'down' | 'ok' | 'back' | 'menu' | 'playpause' | 'next' | 'prev')，
 // 返回 'exit' 让应用退出，返回 'space' 让应用往播放器里按一下空格（暂停/继续），
 // 返回 'seek+' / 'seek-' 让应用往播放器里按一下 → / ←（快进 / 快退）。
+var picking = false;
+function showPick() {
+  picking = true;
+  $('#msg').hidden = true;
+  $('#pick').hidden = false;
+}
+function pickKey(k) {
+  var tiles = [].slice.call($('#pick-metro').children);
+  var i = 0;
+  tiles.forEach(function (el, idx) { if (el.classList.contains('f')) i = idx; });
+  if (k === 'left' || k === 'up' || k === 'right' || k === 'down') {
+    if (k === 'left' || k === 'up') i = Math.max(0, i - 1);
+    else i = Math.min(tiles.length - 1, i + 1);
+    tiles.forEach(function (el) { el.classList.remove('f'); });
+    tiles[i].classList.add('f');
+    return;
+  }
+  if (k === 'ok' && window.BP) window.BP.setTrack(tiles[i].getAttribute('data-track'));
+  if (k === 'back') return 'exit';
+}
 window.tvKey = function (k) {
+  if (picking) return pickKey(k) || '';
   if (!D) return k === 'back' ? 'exit' : '';
   var r = P ? playerKey(k) : panelOpen ? panelKey(k) : homeKey(k);
   return r || '';
@@ -732,7 +796,20 @@ window.tvKey = function (k) {
 var KEYMAP = {ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down', Enter: 'ok', ' ': 'ok', Escape: 'back', Backspace: 'back', ContextMenu: 'menu',
   MediaPlayPause: 'playpause', MediaTrackNext: 'next', MediaTrackPrevious: 'prev', Left: 'left', Right: 'right', Up: 'up', Down: 'down', Esc: 'back'};
 document.addEventListener('keydown', function (e) {
+  var typing = document.activeElement && document.activeElement.tagName === 'INPUT';
   var k = KEYMAP[e.key];
+  if (typing && (k === 'up' || k === 'down')) {
+    e.preventDefault();
+    var order = [$('#tv-email'), $('#tv-pass'), $('#p-login')];
+    var i = order.indexOf(document.activeElement);
+    if (i < 0) i = 0;
+    var n = order[Math.max(0, Math.min(order.length - 1, i + (k === 'down' ? 1 : -1)))];
+    if (n && n.focus) n.focus();
+    panelItems().forEach(function (el) { el.classList.remove('f'); });
+    if (n && n.classList && n.classList.contains('pitem')) n.classList.add('f');
+    return;
+  }
+  if (typing && k !== 'back' && k !== 'left' && k !== 'right') return;
   if (!k) return;
   e.preventDefault();
   tvKey(k);
@@ -769,7 +846,18 @@ function paintIdle() {
   } else {  // 普通浏览器
     paintUpd('安卓电视 / 投影仪应用', '下载 ' + APK_URL + '，用 U 盘装上：遥控器更顺手，OK 能暂停，◀ ▶ 能快进');
   }
-  $('#p-note').textContent = '视频清单在网站上更新，不用重装应用 · 看完的进度存在这台设备上 · BiliPicks 不是 B 站官方产品';
+  var bp = window.BP || {};
+  var who = bp.mode === 'cloud' && bp.profile ? ('当前孩子：' + bp.profile.display_name) : '还没登录，进度在这台设备上';
+  var route = bp.track === 'g1' ? '小学' : (bp.track === 'jh' ? '初中' : '');
+  $('#p-note').textContent = [route, who, '视频清单在网站上更新，不用重装应用', 'BiliPicks 不是 B 站官方产品'].filter(Boolean).join(' · ');
+  var acc = $('#p-acc-s');
+  if (acc) {
+    if (bp.mode === 'cloud' && bp.profile) acc.textContent = bp.profiles.length > 1 ? '按 OK 换成下一个孩子' : '已登录 ' + (bp.user && bp.user.email ? bp.user.email : '');
+    else if (!bp.configured) acc.textContent = '云端登录还没配置，现在是访客';
+    else acc.textContent = '按 OK 填写家长邮箱';
+  }
+  var tr = $('#p-track-s');
+  if (tr) tr.textContent = bp.track === 'g1' ? '现在是小学。按 OK 换成初中' : '现在是初中。按 OK 换成小学';
 }
 function checkUpd() {
   fetch('tv-app.json?t=' + Date.now(), {cache: 'no-store'}).then(function (r) { return r.json(); }).then(function (m) {
@@ -785,8 +873,55 @@ function openPanel() {
   $('#panel').hidden = false;
 }
 function closePanel() { panelOpen = false; $('#panel').hidden = true; }
+function panelItems() { return [].slice.call($('#panel').querySelectorAll('.pitem')).filter(function (el) { return !el.hidden; }); }
+function panelFocus(delta) {
+  var items = panelItems();
+  if (!items.length) return;
+  var i = 0;
+  items.forEach(function (el, idx) { if (el.classList.contains('f')) i = idx; });
+  items.forEach(function (el) { el.classList.remove('f'); });
+  items[(i + delta + items.length) % items.length].classList.add('f');
+}
 function panelKey(k) {
+  if (k === 'up') { panelFocus(-1); return; }
+  if (k === 'down') { panelFocus(1); return; }
   if (k === 'back' || k === 'menu') { closePanel(); return; }
+  if (k !== 'ok' && k !== 'left' && k !== 'right') return;
+  var cur = $('#panel .pitem.f') || panelItems()[0];
+  if (!cur) return;
+  if (cur.id === 'p-track' && k === 'ok' && window.BP) {
+    window.BP.setTrack(window.BP.track === 'g1' ? 'jh' : 'g1');
+    return;
+  }
+  if (cur.id === 'p-acc' && k === 'ok' && window.BP) {
+    if (window.BP.mode === 'cloud' && window.BP.profiles && window.BP.profiles.length > 1) {
+      var ids = window.BP.profiles.map(function (p) { return p.id; });
+      var at = ids.indexOf(window.BP.profile && window.BP.profile.id);
+      window.BP.selectProfile(ids[(at + 1) % ids.length]);
+      return;
+    }
+    if (!window.BP.configured) { toast(window.BP.offline ? '刚才没连上云端' : '云端登录还没配置，先用访客'); return; }
+    if (window.BP.mode === 'cloud') { window.BP.signOut(); return; }
+    var box = $('#tv-auth');
+    var login = $('#p-login');
+    box.hidden = false;
+    login.hidden = false;
+    $('#tv-email').focus();
+    return;
+  }
+  if (cur.id === 'p-login' && window.BP) {
+    var email = $('#tv-email').value;
+    var password = $('#tv-pass').value;
+    var job = k === 'right' ? window.BP.signUp(email, password) : window.BP.signIn(email, password);
+    job.then(function (res) {
+      if (!res.ok) { toast(res.error || '没有完成', 5000); return; }
+      if (res.confirm) { toast('请到邮箱里确认，然后再登录', 6000); return; }
+      if (res.needsProfile) { toast('先在网页上给孩子起个称呼', 5000); return; }
+      var track = (res.profile && res.profile.track) || window.BP.track || 'jh';
+      window.BP.setTrack(track);
+    });
+    return;
+  }
   if (k !== 'ok') return;
   if (APP) { doUpdate(); return; }
   toast(IN_APP ? '这一版要先用 U 盘或 adb 装一次新版' : '在电视上装 BiliPicks 应用才能用', 5000);
@@ -821,21 +956,39 @@ function paintSeekHint() {
   if (CAN_SEEK) { $('#k-lr').textContent = '快退 / 快进'; $('#k-down').textContent = '选集 · 换一条'; }
 }
 paintSeekHint();
-Promise.all([loadData(), detectLanProxy()]).then(function (pair) {
-  var data = pair[0];
-  lanMode = !!pair[1];
-  if (!lanMode) return data;
-  document.documentElement.classList.add('lan');
-  CAN_SEEK = true;
-  paintSeekHint();
-  return loadHls().catch(function () {}).then(function () { return data; });
-}).then(function (data) {
-  prepare(data);
-  $('#sub').textContent = (D.path && D.path.title ? D.path.title + ' · ' : '') + '电视版';
-  $('#msg').hidden = true;
-  renderHome();
-  checkUpd();
+function startTv(dataPromise) {
+  return Promise.all([dataPromise, detectLanProxy()]).then(function (pair) {
+    var data = pair[0];
+    lanMode = !!pair[1];
+    if (!lanMode) return data;
+    document.documentElement.classList.add('lan');
+    CAN_SEEK = true;
+    paintSeekHint();
+    return loadHls().catch(function () {}).then(function () { return data; });
+  }).then(function (data) {
+    prepare(data);
+    $('#sub').textContent = (D.path && D.path.title ? D.path.title + ' · ' : '') + '电视版';
+    $('#msg').hidden = true;
+    renderHome();
+    checkUpd();
+  });
+}
+BiliPicksAccount.open().then(function (bp) {
+  window.BP = bp;
+  if (!bp.track) { showPick(); return; }
+  if (bp.keys) DONE_KEY = bp.keys.done;
+  done = bp.done || {};
+  position = bp.position || {};
+  var ready = window.DATA ? Promise.resolve(window.DATA) : new Promise(function (resolve, reject) {
+    var s = document.createElement('script');
+    s.src = bp.file;
+    s.onload = function () { resolve(window.DATA); };
+    s.onerror = function () { reject(new Error('catalog')); };
+    document.body.appendChild(s);
+  });
+  return startTv(ready);
 }).catch(function () {
+  $('#msg').hidden = false;
   $('#msg').innerHTML = '<b>没加载出来</b>检查一下网络，按 OK 重试';
   window.tvKey = function (k) { if (k === 'ok') location.reload(); return k === 'back' ? 'exit' : ''; };
 });
