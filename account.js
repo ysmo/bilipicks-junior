@@ -36,9 +36,21 @@
       icon: '🧠',
       color: '#2f86e0',
       color2: '#1d5ea8'
+    },
+    y2: {
+      id: 'y2',
+      title: '两岁看世界',
+      ages: '大约 2 岁',
+      blurb: '熊猫、动物宝宝、小鸟，还有花、雨和雪。5 关共 31 条短片，请家长陪着，看完一条就停。',
+      pageTitle: 'BiliPicks · 两岁看世界',
+      file: 'data-y2.js',
+      prefix: 'bilipicks-y2',
+      icon: '🐼',
+      color: '#e8943a',
+      color2: '#b86a1d'
     }
   };
-  var COURSE_ORDER = ['g1', 'jh'];
+  var COURSE_ORDER = ['y2', 'g1', 'jh'];
   var GUEST_SUFFIXES = ['done-v1', 'missions-v1', 'theme', 'autoplay', 'covers-v1', 'pos-v1'];
   var TRACK_KEY = 'bilipicks-track';
   var AUTH_KEY = 'bilipicks-auth-v1';
