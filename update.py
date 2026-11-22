@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """BiliPicks 数据更新脚本（只用 Python 标准库，在自己电脑上运行）。
 
-数据都在 data.js 的 `const DATA = {...};` 这一行里，本脚本读它、改它、写回去。
+数据在 data.js（初中）或 data-g1.js（小学）的 `const DATA = {...};` 这一行里，本脚本读它、改它、写回去。
 
 用法（在仓库根目录运行）：
-  python3 update.py                 刷新：检查失效视频，补封面和时长，更新频道榜的粉丝数
+  python3 update.py                 刷新初中清单：检查失效视频，补封面和时长，更新频道榜的粉丝数
+  python3 update.py --data data-g1.js   同样的事，对象换成小学清单
   python3 update.py --check         只检查、出报告，不改文件
   python3 update.py --deploy        刷新后 git 提交并推送（托管在 GitHub Pages / Cloudflare Pages 时会自动上线）
   python3 update.py --skip-tiers    刷新时跳过频道榜（少发几十个请求）
@@ -57,7 +58,7 @@ def load():
     text = INDEX.read_text(encoding="utf-8")
     m = DATA_RE.search(text)
     if not m:
-        sys.exit("在 data.js 里找不到 `const DATA = {...};` 这一行")
+        sys.exit(f"在 {INDEX.name} 里找不到 `const DATA = {{...}};` 这一行")
     return text, json.loads(m.group(1))
 
 
@@ -244,7 +245,7 @@ def cmd_refresh(args):
         print("\n（--check：没有写入文件）")
         return
     changed = save(text, data)
-    print("\n已写入 data.js" if changed else "\n数据没有变化")
+    print(f"\n已写入 {INDEX.name}" if changed else "\n数据没有变化")
     if args.deploy:
         deploy(f"BiliPicks: 数据刷新 {data['built']}")
 
@@ -307,6 +308,7 @@ def cmd_add(args):
 
 def main():
     p = argparse.ArgumentParser(description="BiliPicks 数据更新")
+    p.add_argument("--data", default="data.js", help="要读写的数据文件，小学清单用 data-g1.js")
     p.add_argument("--check", action="store_true", help="只检查不写入")
     p.add_argument("--deploy", action="store_true", help="写入后 git 提交并推送")
     p.add_argument("--skip-tiers", action="store_true", help="不刷新频道榜")
@@ -322,8 +324,11 @@ def main():
     a.add_argument("--note", help="在成长路线里的说明，默认用推荐理由")
     a.add_argument("--title", help="自己写的标题，默认用 B 站标题")
     a.add_argument("--orig", help="搬运、译制视频的原作者")
+    a.add_argument("--data", default="data.js", help="要写入的数据文件，小学清单用 data-g1.js")
     a.add_argument("--deploy", action="store_true", help="加完后 git 提交并推送")
     args = p.parse_args()
+    global INDEX
+    INDEX = HERE / args.data
     if args.cmd == "add":
         cmd_add(args)
     else:
