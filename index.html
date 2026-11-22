@@ -1850,7 +1850,7 @@ function renderAccount() {
   $('#account-sub').textContent = '';
   if (!bp.configured) {
     $('#account-title').textContent = '云端登录';
-    accountCard(`<p>云端登录还没配置。把 <b>config.example.js</b> 复制成 <b>config.js</b>，填上 Supabase 的项目网址和 anon 公钥后再刷新。</p><p class="note">现在可以继续用访客模式，进度只存在这台设备上。小学和初中各记各的。</p>`);
+    accountCard(`<p>云端登录还没配置。公开的 GitHub Pages 使用仓库里的 <b>config.public.js</b>（anon 公钥，数据由行级安全保护）。本机的 <b>config.js</b> 可以覆盖它。两份现在都不可用，可以继续用访客模式。</p><p class="note">进度只存在这台设备上。小学和初中各记各的。</p>`);
     return;
   }
   if (bp.offline) {

@@ -853,7 +853,7 @@ function paintIdle() {
   var acc = $('#p-acc-s');
   if (acc) {
     if (bp.mode === 'cloud' && bp.profile) acc.textContent = bp.profiles.length > 1 ? '按 OK 换成下一个孩子' : '已登录 ' + (bp.user && bp.user.email ? bp.user.email : '');
-    else if (!bp.configured) acc.textContent = '云端登录还没配置，现在是访客';
+    else if (!bp.configured) acc.textContent = '云端登录还没配置（公开站用 config.public.js，本机 config.js 可覆盖），现在是访客';
     else acc.textContent = '按 OK 填写家长邮箱';
   }
   var tr = $('#p-track-s');
@@ -900,7 +900,7 @@ function panelKey(k) {
       window.BP.selectProfile(ids[(at + 1) % ids.length]);
       return;
     }
-    if (!window.BP.configured) { toast(window.BP.offline ? '刚才没连上云端' : '云端登录还没配置，先用访客'); return; }
+    if (!window.BP.configured) { toast(window.BP.offline ? '刚才没连上云端' : '云端登录还没配置。公开站用 config.public.js，本机 config.js 可覆盖'); return; }
     if (window.BP.mode === 'cloud') { window.BP.signOut(); return; }
     var box = $('#tv-auth');
     var login = $('#p-login');

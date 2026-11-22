@@ -51,7 +51,7 @@ python3 -m http.server 8765
 
 登录之后，如果这台设备上还有未登录时的进度，会问要并进哪个孩子。小学和初中可以交给不同的孩子。云端已经有的记录会留下来，不会被静默盖掉。合并过一次之后，这个孩子的进度就在各设备之间同步。
 
-还没把 Supabase 配好时，登录按钮会说明「云端登录还没配置」，站点仍按访客使用。
+公开的 GitHub Pages 使用仓库里已提交的 `config.public.js`（这个项目的网址和 anon 公钥）。anon 公钥本来就可以出现在网页里，孩子的进度靠数据库的行级安全保护，不靠藏起这把公钥。页面会先用已经放好、并且能用的 `window.BILIPICKS_CONFIG`；没有的话先读本机的 `config.js`（家里或树莓派可以用它覆盖公开配置）；这个文件不存在，或里面是空的、不能用，再读 `config.public.js`。两份都不可用时，登录按钮会说明云端登录还没配置，站点仍按访客使用。
 
 ### 建一个免费的 Supabase 项目
 
@@ -60,7 +60,7 @@ python3 -m http.server 8765
 3. Authentication → URL Configuration：Site URL 填 `https://ysmo.github.io/bilipicks-junior/`。家里的 HTTPS 站点如果也要登录，把它的源加进 Redirect URLs。不要把内网主机名写进这个仓库。
 4. 打开 SQL Editor，把 [`supabase/schema.sql`](supabase/schema.sql) 整段执行。它会建 `profiles`（孩子档案）和 `progress`（进度），并打开行级安全：家长只能读写自己的行。
 5. Project Settings → API 里复制 Project URL 和 `anon` `public` 密钥。不要复制 `service_role`。
-6. 把 `config.example.js` 复制成 `config.js`，填上这两项。`config.js` 已在 `.gitignore` 里。页面只在运行时读取它；GitHub Pages 上没有这个文件时，就保持访客模式。
+6. 公开页面不需要再复制配置。GitHub Pages 直接使用已提交的 `config.public.js`。家里或树莓派若要换一个 Supabase 项目，把 `config.example.js` 复制成 `config.js` 再填这两项。`config.js` 已在 `.gitignore` 里，不会提交，并且会覆盖 `config.public.js`。
 
 ```js
 window.BILIPICKS_CONFIG = {
@@ -69,7 +69,7 @@ window.BILIPICKS_CONFIG = {
 };
 ```
 
-Supabase 的接口在海外，有的大陆网络会慢，或者打不开。打不开时，页面仍可以当访客用，进度先留在这台设备上。登录地址和公钥只写在 `config.js` 里：换成另一个 Supabase 项目，或换成提供同一套 Auth（`/auth/v1`）和 PostgREST（`/rest/v1`）的服务时，改这个文件即可，不用改页面。
+Supabase 的接口在海外，有的大陆网络会慢，或者打不开。打不开时，页面仍可以当访客用，进度先留在这台设备上。公开站的登录地址和 anon 公钥在 `config.public.js`。要换成另一个 Supabase 项目，或换成提供同一套 Auth（`/auth/v1`）和 PostgREST（`/rest/v1`）的服务，在本机写一份 `config.js` 即可，不用改页面。不要把 `service_role` 写进这些文件。
 
 ## 家里的树莓派（局域网）
 
@@ -130,8 +130,9 @@ location /proxy/ {
 |---|---|
 | `index.html` | 页面、样式和交互。先选路线，再按访客或已登录的孩子显示对应清单 |
 | `tv.html` | 电视版。跟网页用同一条路线、同一份进度 |
-| `account.js` | 路线记忆、Supabase 登录、孩子档案、进度同步。没配 `config.js` 时只走访客 |
-| `config.example.js` | 公开的 Supabase 网址和 anon 公钥示例。复制成 `config.js` 再填 |
+| `account.js` | 路线记忆、Supabase 登录、孩子档案、进度同步。先用已有配置，再试 `config.js`，最后用 `config.public.js`；都不可用时只走访客 |
+| `config.public.js` | 公开 GitHub Pages 用的 Supabase 网址和 anon 公钥。anon 公钥可以公开，数据由行级安全保护 |
+| `config.example.js` | 本机覆盖用的示例。复制成 `config.js` 再填；`config.js` 不提交 |
 | `supabase/schema.sql` | 档案表、进度表和行级安全策略 |
 | `data.js` | 初中清单（必须保持 `const DATA = {...};` 单行，以便 `update.py` 读写） |
 | `data-g1.js` | 小学清单，格式和 `data.js` 一样 |
@@ -148,7 +149,7 @@ python3 update.py add BV1xxxxxxxxx --cat 科学实验 --age 12 --reason "为什�
 python3 update.py --data data-g1.js add BV1xxxxxxxxx --cat 科学好奇 --age 6 --reason "为什么推荐"
 ```
 
-合并是否会丢掉一边的进度，可以用 `node account-merge.test.js` 在本地看一眼。
+合并是否会丢掉一边的进度，可以用 `node account-merge.test.js` 在本地看一眼。配置先读哪一份，可以用 `node account-config.test.js`。
 
 ## 许可与出处
 
